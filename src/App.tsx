@@ -97,6 +97,14 @@ const MainContent: React.FC = () => {
           )}
         </main>
       </div>
+      
+      <footer className="w-full bg-brand-black border-t border-brand-card py-4 mt-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-brand-muted text-xs text-center leading-relaxed">
+            TradeWise is an educational simulation platform. All content is for learning purposes only and does not constitute financial advice. Paper trading results do not reflect real market outcomes. Please consult a SEBI registered financial advisor before making any real investment decisions.
+          </p>
+        </div>
+      </footer>
 
       <ToastContainer />
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />

@@ -23,7 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0b0f19]/90 backdrop-blur-md border-b border-slate-800/80">
+    <header className="sticky top-0 z-40 bg-brand-black/95 backdrop-blur-md border-b border-brand-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo & Wordmark */}
@@ -31,16 +31,16 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             onClick={() => setActiveTab('dashboard')}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-brand-teal flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-              <CandlestickChart className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-lg bg-brand-card flex items-center justify-center group-hover:scale-105 transition-transform">
+              <CandlestickChart className="w-5 h-5 text-brand-orange" />
             </div>
-            <span className="font-extrabold text-xl text-white tracking-tight flex items-center gap-1">
+            <span className="font-extrabold text-xl text-brand-light tracking-tight flex items-center gap-1">
               TradeWise
             </span>
           </div>
 
           {/* Nav Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-1 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800/80">
+          <nav className="hidden md:flex items-center gap-1 bg-brand-dark p-1.5 rounded-lg border border-brand-dark">
             {navItems.map(item => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -50,8 +50,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                   onClick={() => setActiveTab(item.id)}
                   className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                     isActive
-                      ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      ? 'bg-brand-orange text-brand-black shadow-md shadow-brand-orange/20'
+                      : 'text-brand-muted hover:text-brand-light hover:bg-brand-card'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -67,19 +67,19 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             <button
               onClick={claimDailyStreak}
               title="Click to claim daily streak bonus!"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition-all cursor-pointer group"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-orange/10 border border-brand-orange/30 text-brand-orange rounded-xl text-xs font-bold hover:bg-brand-orange/20 transition-all cursor-pointer group"
             >
-              <Flame className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform animate-pulse" />
+              <Flame className="w-4 h-4 text-brand-orange group-hover:scale-110 transition-transform animate-pulse" />
               <span>{user.streak}d</span>
             </button>
 
             {/* XP Pill */}
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 rounded-xl text-xs font-bold">
-              <Award className="w-4 h-4 text-brand-500" />
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-brand-card border border-brand-card text-brand-light rounded-lg text-xs font-bold">
+              <Award className="w-4 h-4 text-brand-muted" />
               <div className="flex flex-col text-[11px] leading-tight">
                 <span>{user.xp} XP</span>
-                <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden mt-0.5">
-                  <div style={{ width: `${currentLevelProgress}%` }} className="h-full bg-brand-500" />
+                <div className="w-12 h-1 bg-brand-dark rounded-full overflow-hidden mt-0.5">
+                  <div style={{ width: `${currentLevelProgress}%` }} className="h-full bg-brand-orange" />
                 </div>
               </div>
             </div>
@@ -87,12 +87,12 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             {/* User Avatar */}
             <button
               onClick={() => setActiveTab('profile')}
-              className="relative p-0.5 rounded-full bg-gradient-to-r from-brand-600 to-brand-teal hover:scale-105 transition-transform"
+              className="relative p-0.5 rounded-full bg-brand-card hover:scale-105 transition-transform"
             >
-              <div className="w-8 h-8 rounded-full bg-brand-600/20 border-2 border-slate-900 flex items-center justify-center text-brand-400">
+              <div className="w-8 h-8 rounded-full bg-brand-dark flex items-center justify-center text-brand-muted">
                 <UserCircle className="w-6 h-6" />
               </div>
-              <span className="absolute -bottom-1 -right-1 bg-brand-600 text-white text-[9px] font-extrabold px-1 rounded-full border border-slate-900">
+              <span className="absolute -bottom-1 -right-1 bg-brand-orange text-brand-black text-[9px] font-extrabold px-1 rounded-full border border-brand-black">
                 L{user.level}
               </span>
             </button>
@@ -101,7 +101,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0b0f19]/95 backdrop-blur-lg border-t border-slate-800 px-2 py-2 flex items-center justify-around">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-brand-black/95 backdrop-blur-lg border-t border-brand-black px-2 py-2 flex items-center justify-around">
         {navItems.map(item => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -110,7 +110,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={`flex flex-col items-center gap-1 text-[10px] font-semibold py-1 px-3 rounded-xl transition-all ${
-                isActive ? 'text-brand-500 font-bold' : 'text-slate-400'
+                isActive ? 'text-brand-orange font-bold' : 'text-brand-muted'
               }`}
             >
               <Icon className="w-5 h-5" />

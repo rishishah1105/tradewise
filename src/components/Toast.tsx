@@ -35,7 +35,7 @@ export const ToastContainer: React.FC = () => {
             <div className="p-1 rounded-lg bg-slate-800/80">{icon}</div>
             <div className="flex-1">
               <h5 className="text-xs font-bold text-slate-100">{toast.title}</h5>
-              <p className="text-xs text-slate-300 mt-0.5">{toast.message}</p>
+              <p className="text-sm text-slate-300 mt-0.5">{toast.message}</p>
             </div>
             <button
               onClick={() => removeToast(toast.id)}

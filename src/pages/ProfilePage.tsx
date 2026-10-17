@@ -15,15 +15,15 @@ export const ProfilePage: React.FC = () => {
 
   const getBadgeIcon = (iconName: string) => {
     switch (iconName) {
-      case 'BookOpen': return <BookOpen className="w-6 h-6 text-brand-500" />;
-      case 'Award': return <Award className="w-6 h-6 text-amber-400" />;
-      case 'TrendingUp': return <TrendingUp className="w-6 h-6 text-emerald-400" />;
-      case 'PieChart': return <PieChart className="w-6 h-6 text-indigo-400" />;
-      case 'Zap': return <Zap className="w-6 h-6 text-amber-500" />;
-      case 'Target': return <Target className="w-6 h-6 text-teal-400" />;
-      case 'ShieldCheck': return <ShieldCheck className="w-6 h-6 text-emerald-500" />;
-      case 'DollarSign': return <DollarSign className="w-6 h-6 text-emerald-400" />;
-      default: return <Award className="w-6 h-6 text-brand-500" />;
+      case 'BookOpen': return <BookOpen className="w-6 h-6 text-brand-light" />;
+      case 'Award': return <Award className="w-6 h-6 text-brand-orange" />;
+      case 'TrendingUp': return <TrendingUp className="w-6 h-6 text-brand-light" />;
+      case 'PieChart': return <PieChart className="w-6 h-6 text-brand-light" />;
+      case 'Zap': return <Zap className="w-6 h-6 text-brand-orange" />;
+      case 'Target': return <Target className="w-6 h-6 text-brand-light" />;
+      case 'ShieldCheck': return <ShieldCheck className="w-6 h-6 text-brand-light" />;
+      case 'DollarSign': return <DollarSign className="w-6 h-6 text-brand-light" />;
+      default: return <Award className="w-6 h-6 text-brand-light" />;
     }
   };
 
@@ -80,42 +80,42 @@ export const ProfilePage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-16">
       {/* User Header Profile Card */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col sm:flex-row items-center gap-6">
-        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-slate-800/80 border-2 border-indigo-500/30 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/10">
-          <UserCircle className="w-12 h-12 text-indigo-400/80" strokeWidth={1.5} />
+      <div className="bg-brand-card border-none rounded-lg p-6 sm:p-8 shadow-xl flex flex-col sm:flex-row items-center gap-6">
+        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-brand-card border-2 border-brand-orange/30 flex items-center justify-center shrink-0 shadow-lg shadow-brand-orange/10">
+          <UserCircle className="w-12 h-12 text-brand-orange" strokeWidth={1.5} />
         </div>
         <div className="space-y-2 text-center sm:text-left flex-1">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">{user.name}</h1>
-          <p className="text-xs text-slate-400 font-medium">Student Investor • Member since August 2026</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-brand-light">{user.name}</h1>
+          <p className="text-sm text-brand-muted font-normal">Student Investor • Member since August 2026</p>
 
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2">
-            <span className="px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-400 text-xs font-bold">
-              {user.xp} Total XP
+            <span className="px-3 py-1 rounded-full bg-brand-dark border-none text-brand-orange text-xs font-bold flex items-center gap-1">
+              {user.xp} <span className="text-brand-muted font-normal">Total XP</span>
             </span>
-            <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-amber-500" /> {user.streak}-Day Streak
+            <span className="px-3 py-1 rounded-full bg-brand-dark border-none text-brand-orange text-xs font-bold flex items-center gap-1">
+              <Flame className="w-3.5 h-3.5 text-brand-orange" /> {user.streak} <span className="text-brand-muted font-normal">Streak</span>
             </span>
-            <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
-              {unlockedCount} Badges Unlocked
+            <span className="px-3 py-1 rounded-full bg-brand-dark border-none text-brand-light text-xs font-bold flex items-center gap-1">
+              {unlockedCount} <span className="text-brand-muted font-normal">Badges Unlocked</span>
             </span>
           </div>
         </div>
       </div>
 
       {/* GitHub / LeetCode Style Contribution Heatmap */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+      <div className="bg-brand-card border-none rounded-lg p-6 shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-brand-dark pb-3">
           <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-emerald-400" />
-            <h3 className="text-sm font-extrabold text-white">Study & Trading Activity Heatmap</h3>
+            <Calendar className="w-5 h-5 text-brand-light" />
+            <h3 className="text-lg font-semibold text-brand-light">Study & Trading Activity Heatmap</h3>
           </div>
-          <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
-            <Flame className="w-4 h-4 text-amber-500 animate-pulse" /> {user.streak}-Day Active Streak
+          <span className="text-xs font-bold text-brand-orange flex items-center gap-1">
+            <Flame className="w-4 h-4 text-brand-orange animate-pulse" /> {user.streak}-Day Active Streak
           </span>
         </div>
 
         {/* Month Labels Header */}
-        <div className="flex items-center justify-between px-8 text-[11px] font-bold text-slate-400 font-mono">
+        <div className="flex items-center justify-between px-8 text-[11px] font-bold text-brand-muted font-mono">
           {monthLabels.map(m => (
             <span key={m}>{m}</span>
           ))}
@@ -125,7 +125,7 @@ export const ProfilePage: React.FC = () => {
         <div className="w-full pb-2">
           <div className="flex items-center gap-1 w-full px-2">
             {/* Days of week column label */}
-            <div className="flex flex-col justify-between text-[8px] font-mono text-slate-500 h-full py-0.5 mr-1 shrink-0">
+            <div className="flex flex-col justify-between text-[8px] font-mono text-brand-muted h-full py-0.5 mr-1 shrink-0">
               <span>Mon</span>
               <span>Wed</span>
               <span>Fri</span>
@@ -136,15 +136,15 @@ export const ProfilePage: React.FC = () => {
               {columns.map((col, cIdx) => (
                 <div key={cIdx} className="flex flex-col gap-[2px] flex-1 max-w-[12px]">
                   {col.map((cell, rIdx) => {
-                    let cellColor = 'bg-slate-800/80 border border-slate-700/50';
+                    let cellColor = 'bg-[#2A2F3E] border-none';
                     if (cell.activityCount === 1) {
-                      cellColor = 'bg-emerald-950/80 border border-emerald-900 text-emerald-300';
+                      cellColor = 'bg-[#7A5A00] border-none';
                     } else if (cell.activityCount === 2) {
-                      cellColor = 'bg-emerald-800 border border-emerald-700 text-emerald-100';
+                      cellColor = 'bg-[#A67500] border-none';
                     } else if (cell.activityCount === 3) {
-                      cellColor = 'bg-emerald-600 border border-emerald-500 text-white';
+                      cellColor = 'bg-[#D29200] border-none';
                     } else if (cell.activityCount >= 4) {
-                      cellColor = 'bg-emerald-400 border border-white text-slate-950 shadow-md shadow-emerald-400/40 animate-pulse';
+                      cellColor = 'bg-[#FFAE00] border-none shadow-md shadow-brand-orange/40 animate-pulse-slow';
                     }
 
                     let tooltipPosClass = 'top-6 left-1/2 -translate-x-1/2'; // Default: below and centered
@@ -165,9 +165,9 @@ export const ProfilePage: React.FC = () => {
                         className={`w-full aspect-square rounded-[1px] transition-all relative group ${cellColor}`}
                       >
                         {/* Hover Tooltip */}
-                        <div className={`absolute ${tooltipPosClass} hidden group-hover:flex flex-col items-center bg-slate-950 text-[10px] text-white p-2 rounded-xl border border-slate-700 whitespace-nowrap z-30 shadow-2xl pointer-events-none`}>
-                          <span className="font-bold text-emerald-400">{cell.dateStr}</span>
-                          <span className="text-slate-300 mt-0.5">{cell.activityText}</span>
+                        <div className={`absolute ${tooltipPosClass} hidden group-hover:flex flex-col items-center bg-brand-black text-[10px] text-brand-light p-2 rounded-xl border border-brand-dark whitespace-nowrap z-30 shadow-2xl pointer-events-none`}>
+                          <span className="font-bold text-brand-orange">{cell.dateStr}</span>
+                          <span className="text-brand-light mt-0.5">{cell.activityText}</span>
                         </div>
                       </div>
                     );
@@ -179,57 +179,57 @@ export const ProfilePage: React.FC = () => {
         </div>
 
         {/* Legend Footer */}
-        <div className="flex items-center justify-end gap-2 text-[10px] text-slate-400 font-mono pt-2 border-t border-slate-800/80">
+        <div className="flex items-center justify-end gap-2 text-[10px] text-brand-muted font-mono pt-2 border-t border-brand-dark">
           <span>Less</span>
-          <span className="w-3 h-3 rounded-sm bg-slate-800/80 border border-slate-700" />
-          <span className="w-3 h-3 rounded-sm bg-emerald-950/80 border border-emerald-900" />
-          <span className="w-3 h-3 rounded-sm bg-emerald-800 border border-emerald-700" />
-          <span className="w-3 h-3 rounded-sm bg-emerald-600 border border-emerald-500" />
-          <span className="w-3 h-3 rounded-sm bg-emerald-400 border border-white shadow-sm" />
+          <span className="w-3 h-3 rounded-sm bg-[#2A2F3E]" />
+          <span className="w-3 h-3 rounded-sm bg-[#7A5A00]" />
+          <span className="w-3 h-3 rounded-sm bg-[#A67500]" />
+          <span className="w-3 h-3 rounded-sm bg-[#D29200]" />
+          <span className="w-3 h-3 rounded-sm bg-[#FFAE00] shadow-sm" />
           <span>More</span>
         </div>
       </div>
 
       {/* Badge Case Showcase */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div className="bg-brand-card border-none rounded-lg p-6 shadow-xl space-y-6">
+        <div className="flex items-center justify-between border-b border-brand-dark pb-3">
           <div>
-            <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-              <Award className="w-5 h-5 text-amber-400" /> Achievement Badge Case
+            <h3 className="text-lg font-semibold text-brand-light flex items-center gap-2">
+              <Award className="w-5 h-5 text-brand-orange" /> Achievement Badge Case
             </h3>
-            <p className="text-xs text-slate-400">Unlock milestone badges through learning modules and paper trades.</p>
+            <p className="text-sm text-brand-muted">Unlock milestone badges through learning modules and paper trades.</p>
           </div>
-          <span className="text-xs font-bold text-indigo-400">{unlockedCount} / {badges.length} Mastered</span>
+          <span className="text-xs font-bold text-brand-light">{unlockedCount} / {badges.length} Mastered</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {badges.map(badge => (
             <div
               key={badge.id}
-              className={`p-5 rounded-2xl border flex flex-col justify-between space-y-3 transition-all ${
+              className={`p-5 rounded-2xl border-2 flex flex-col justify-between space-y-3 transition-all ${
                 badge.unlocked
-                  ? 'bg-slate-900 border-amber-500/40 shadow-lg shadow-amber-950/20 hover:border-amber-400 glow-indigo'
-                  : 'bg-slate-900/40 border-slate-800 opacity-50'
+                  ? 'bg-brand-card border-brand-orange shadow-lg shadow-brand-orange/20 glow-orange'
+                  : 'bg-brand-card border-brand-muted opacity-60 grayscale'
               }`}
             >
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-slate-800/80 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-lg bg-brand-dark flex items-center justify-center">
                   {getBadgeIcon(badge.iconName)}
                 </div>
                 {badge.unlocked ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  <CheckCircle2 className="w-5 h-5 text-brand-orange" />
                 ) : (
-                  <Lock className="w-4 h-4 text-slate-500" />
+                  <Lock className="w-4 h-4 text-brand-muted" />
                 )}
               </div>
 
               <div>
-                <h4 className="font-extrabold text-sm text-white">{badge.title}</h4>
-                <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">{badge.description}</p>
+                <h4 className="font-semibold text-lg text-brand-light">{badge.title}</h4>
+                <p className="text-[11px] text-brand-muted mt-1 leading-relaxed">{badge.description}</p>
               </div>
 
-              <div className="pt-2 border-t border-slate-800/80">
-                <span className="text-[10px] font-bold text-slate-500">
+              <div className="pt-2 border-t border-brand-dark">
+                <span className="text-[10px] font-bold text-brand-muted">
                   {badge.unlocked ? `Unlocked ${badge.unlockedAt || 'Recently'}` : 'Locked Milestone'}
                 </span>
               </div>
@@ -239,40 +239,40 @@ export const ProfilePage: React.FC = () => {
       </div>
 
       {/* Trading Performance Stats */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-        <h3 className="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-          <TrendingUp className="w-5 h-5 text-teal-400" /> Paper Simulator Statistics
+      <div className="bg-brand-card border-none rounded-lg p-6 shadow-xl space-y-4">
+        <h3 className="text-lg font-semibold text-brand-light flex items-center gap-2 border-b border-brand-dark pb-3">
+          <TrendingUp className="w-5 h-5 text-brand-light" /> Paper Simulator Statistics
         </h3>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-          <div className="p-4 bg-slate-800/40 rounded-2xl border border-slate-800">
-            <span className="text-xs text-slate-400 block">Total Executed Trades</span>
-            <strong className="text-xl font-black text-white">{tradeLog.length}</strong>
+          <div className="p-4 bg-brand-dark rounded-lg border-none">
+            <span className="text-xs text-brand-muted block">Total Executed Trades</span>
+            <strong className="text-xl font-bold font-mono text-brand-light">{tradeLog.length}</strong>
           </div>
-          <div className="p-4 bg-slate-800/40 rounded-2xl border border-slate-800">
-            <span className="text-xs text-slate-400 block">Active Stock Positions</span>
-            <strong className="text-xl font-black text-indigo-400">{Object.keys(holdings).length}</strong>
+          <div className="p-4 bg-brand-dark rounded-lg border-none">
+            <span className="text-xs text-brand-muted block">Active Stock Positions</span>
+            <strong className="text-xl font-bold font-mono text-brand-light">{Object.keys(holdings).length}</strong>
           </div>
-          <div className="p-4 bg-slate-800/40 rounded-2xl border border-slate-800">
-            <span className="text-xs text-slate-400 block">Win Rate %</span>
-            <strong className="text-xl font-black text-emerald-400">100%</strong>
+          <div className="p-4 bg-brand-dark rounded-lg border-none">
+            <span className="text-xs text-brand-muted block">Win Rate %</span>
+            <strong className="text-xl font-bold font-mono text-brand-light">100%</strong>
           </div>
-          <div className="p-4 bg-slate-800/40 rounded-2xl border border-slate-800">
-            <span className="text-xs text-slate-400 block">Best Trade Profit</span>
-            <strong className="text-xl font-black text-emerald-400">+{formatMoney(45.50)}</strong>
+          <div className="p-4 bg-brand-dark rounded-lg border-none">
+            <span className="text-xs text-brand-muted block">Best Trade Profit</span>
+            <strong className="text-xl font-bold font-mono text-brand-light">+{formatMoney(45.50)}</strong>
           </div>
         </div>
       </div>
 
       {/* Reset Account Settings */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-brand-card border-none rounded-lg p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h4 className="text-sm font-bold text-white">Reset Account & Portfolio Data</h4>
-          <p className="text-xs text-slate-400">Restart your learning path and restore virtual cash back to starting balance.</p>
+          <h4 className="text-lg font-semibold text-brand-light">Reset Account & Portfolio Data</h4>
+          <p className="text-sm text-brand-muted">Restart your learning path and restore virtual cash back to starting balance.</p>
         </div>
         <button
           onClick={resetAllProgress}
-          className="px-5 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 text-xs font-bold transition-all flex items-center gap-2 shrink-0"
+          className="px-5 py-2.5 rounded-lg bg-brand-dark hover:bg-brand-dark/80 text-brand-light text-xs font-bold transition-all flex items-center gap-2 shrink-0"
         >
           <RefreshCw className="w-4 h-4" />
           <span>Reset All Progress</span>

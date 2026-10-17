@@ -1,9 +1,10 @@
 @import "tailwindcss";
+@config "../tailwind.config.js";
 
 @layer base {
   body {
-    background-color: #0b0f19;
-    color: #f8fafc;
+    background-color: #292C38;
+    color: #E2E8F0;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
@@ -15,34 +16,30 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #292C38;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #3A3F55;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #64748B;
 }
 
 /* Custom animations & glow */
-.glow-indigo {
-  box-shadow: 0 0 25px -5px rgba(79, 70, 229, 0.35);
+.glow-orange {
+  box-shadow: 0 0 25px -5px rgba(255, 174, 0, 0.35);
 }
 
-.glow-teal {
-  box-shadow: 0 0 25px -5px rgba(13, 148, 136, 0.35);
-}
-
-.glow-emerald {
-  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.35);
+.glow-green {
+  box-shadow: 0 0 25px -5px rgba(34, 197, 94, 0.35);
 }
 
 .glass-panel {
-  background: rgba(19, 27, 46, 0.75);
+  background: rgba(58, 63, 85, 0.75);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.08);
 }

@@ -7,27 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-          teal: '#0d9488',
-          emerald: '#10b981',
-          rose: '#f43f5e',
-          amber: '#f59e0b',
-        },
-        dark: {
-          bg: '#0b0f19',
-          card: '#131b2e',
-          border: '#1e293b',
-          muted: '#334155',
-          text: '#f8fafc',
-          subtext: '#94a3b8'
-        }
+        'brand-black': '#000000',
+        'brand-dark': '#292C38',
+        'brand-card': '#38384A',
+        'brand-orange': '#FFAE00',
+        'brand-light': '#E2E8F0',
+        'brand-muted': '#94A3B8',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
@@ -45,8 +30,8 @@ export default {
           '100%': { opacity: '0', transform: 'translateY(-40px) scale(1)' },
         },
         glowPulse: {
-          '0%': { boxShadow: '0 0 5px rgba(79, 70, 229, 0.4)' },
-          '100%': { boxShadow: '0 0 20px rgba(79, 70, 229, 0.8)' },
+          '0%': { boxShadow: '0 0 5px rgba(255, 174, 0, 0.4)' },
+          '100%': { boxShadow: '0 0 20px rgba(255, 174, 0, 0.8)' },
         }
       }
     },

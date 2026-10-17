@@ -76,7 +76,7 @@ const CompoundingCalculatorAid: React.FC<{ formatMoney: (n: number) => string }>
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
       <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-        <h4 className="font-bold text-slate-100 flex items-center gap-2">
+        <h4 className="font-semibold text-slate-100 flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-brand-500" /> Interactive Compounding Growth Curve
         </h4>
         <span className="text-xs bg-brand-500/20 text-brand-400 px-2.5 py-1 rounded-full font-semibold border border-brand-500/30">
@@ -188,7 +188,7 @@ const SipGrowthAid: React.FC<{ formatMoney: (n: number) => string }> = ({ format
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <h4 className="font-bold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
+      <h4 className="font-semibold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
         <DollarSign className="w-5 h-5 text-emerald-400" /> SIP Growth Calculator
       </h4>
 
@@ -243,7 +243,7 @@ const SipGrowthAid: React.FC<{ formatMoney: (n: number) => string }> = ({ format
           </div>
           <div className="flex justify-between items-center text-base pt-1">
             <span className="font-semibold text-slate-200">Total Portfolio Value:</span>
-            <strong className="text-indigo-400 font-bold text-lg">{formatMoney(Math.round(totalValue))}</strong>
+            <strong className="text-indigo-400 font-bold font-mono text-lg">{formatMoney(Math.round(totalValue))}</strong>
           </div>
         </div>
 
@@ -276,7 +276,7 @@ const DiversificationAid: React.FC = () => {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
       <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-        <h4 className="font-bold text-slate-100 flex items-center gap-2">
+        <h4 className="font-semibold text-slate-100 flex items-center gap-2">
           <PieChart className="w-5 h-5 text-indigo-400" /> Asset Allocation & Risk Reducer
         </h4>
         <div className="flex gap-2">
@@ -362,7 +362,7 @@ const RiskReturnAid: React.FC = () => {
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <h4 className="font-bold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
+      <h4 className="font-semibold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
         <ShieldAlert className="w-5 h-5 text-amber-400" /> Risk vs. Return Spectrum
       </h4>
 
@@ -404,7 +404,7 @@ const CandlestickAid: React.FC = () => {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
       <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
-        <h4 className="font-bold text-slate-100 flex items-center gap-2">
+        <h4 className="font-semibold text-slate-100 flex items-center gap-2">
           <BarChart2 className="w-5 h-5 text-emerald-400" /> Candlestick Reader Diagram
         </h4>
         <div className="flex gap-2">
@@ -466,7 +466,7 @@ const CandlestickAid: React.FC = () => {
 const OrderBookAid: React.FC<{ formatMoney: (n: number) => string }> = ({ formatMoney }) => {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <h4 className="font-bold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
+      <h4 className="font-semibold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
         <Layers className="w-5 h-5 text-indigo-400" /> Order Book Execution Visualizer
       </h4>
 
@@ -489,7 +489,7 @@ const OrderBookAid: React.FC<{ formatMoney: (n: number) => string }> = ({ format
           </div>
         </div>
       </div>
-      <p className="text-xs text-slate-400 mt-4 text-center">
+      <p className="text-sm text-slate-400 mt-4 text-center">
         Market BUY orders match immediately against the lowest ASK ({formatMoney(185.10)}). Limit BUY orders wait until price reaches their set bid limit.
       </p>
     </div>
@@ -500,7 +500,7 @@ const OrderBookAid: React.FC<{ formatMoney: (n: number) => string }> = ({ format
 const BidAskAid: React.FC<{ formatMoney: (n: number) => string }> = ({ formatMoney }) => {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <h4 className="font-bold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
+      <h4 className="font-semibold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
         <Sliders className="w-5 h-5 text-teal-400" /> The Bid-Ask Spread Gap
       </h4>
 
@@ -528,13 +528,13 @@ const BidAskAid: React.FC<{ formatMoney: (n: number) => string }> = ({ formatMon
 const PeRatioAid: React.FC<{ formatMoney: (n: number) => string }> = ({ formatMoney }) => {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <h4 className="font-bold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
+      <h4 className="font-semibold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
         <Info className="w-5 h-5 text-indigo-400" /> P/E Ratio Valuation Comparator
       </h4>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
         <div className="p-4 bg-slate-800/40 rounded-xl border border-slate-700 space-y-2">
-          <strong className="text-indigo-400 font-bold block text-sm">Company A (Growth Tech)</strong>
+          <strong className="text-indigo-400 font-bold font-mono block text-sm">Company A (Growth Tech)</strong>
           <div className="flex justify-between"><span>Stock Price:</span><span>{formatMoney(200)}</span></div>
           <div className="flex justify-between"><span>Earnings (EPS):</span><span>{formatMoney(4)}</span></div>
           <div className="flex justify-between border-t border-slate-700 pt-2 font-bold text-slate-100">
@@ -545,7 +545,7 @@ const PeRatioAid: React.FC<{ formatMoney: (n: number) => string }> = ({ formatMo
         </div>
 
         <div className="p-4 bg-slate-800/40 rounded-xl border border-slate-700 space-y-2">
-          <strong className="text-emerald-400 font-bold block text-sm">Company B (Value Energy)</strong>
+          <strong className="text-emerald-400 font-bold font-mono block text-sm">Company B (Value Energy)</strong>
           <div className="flex justify-between"><span>Stock Price:</span><span>{formatMoney(60)}</span></div>
           <div className="flex justify-between"><span>Earnings (EPS):</span><span>{formatMoney(5)}</span></div>
           <div className="flex justify-between border-t border-slate-700 pt-2 font-bold text-slate-100">
@@ -563,7 +563,7 @@ const PeRatioAid: React.FC<{ formatMoney: (n: number) => string }> = ({ formatMo
 const EtfBreakdownAid: React.FC = () => {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <h4 className="font-bold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
+      <h4 className="font-semibold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
         <PieChart className="w-5 h-5 text-indigo-400" /> S&P 500 ETF Basket (SPY)
       </h4>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-center text-xs font-semibold">
@@ -581,23 +581,23 @@ const EtfBreakdownAid: React.FC = () => {
 const StockEquityAid: React.FC<{ formatMoney: (n: number) => string }> = ({ formatMoney }) => {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <h4 className="font-bold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
+      <h4 className="font-semibold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
         <TrendingUp className="w-5 h-5 text-emerald-400" /> Share Slice Ownership
       </h4>
       <div className="flex items-center justify-around bg-slate-800/40 p-4 rounded-xl border border-slate-800 text-xs">
         <div className="text-center">
           <span className="text-slate-400 block">Total Corporation Value</span>
-          <strong className="text-indigo-400 font-bold text-base">$1,000,000</strong>
+          <strong className="text-indigo-400 font-bold font-mono text-base">$1,000,000</strong>
         </div>
         <ArrowRight className="w-5 h-5 text-slate-500" />
         <div className="text-center">
           <span className="text-slate-400 block">Total Shares Issued</span>
-          <strong className="text-slate-200 font-bold text-base">100,000 Shares</strong>
+          <strong className="text-slate-200 font-bold font-mono text-base">100,000 Shares</strong>
         </div>
         <ArrowRight className="w-5 h-5 text-slate-500" />
         <div className="text-center">
           <span className="text-slate-400 block">Price Per Share</span>
-          <strong className="text-emerald-400 font-bold text-base">{formatMoney(10)}</strong>
+          <strong className="text-emerald-400 font-bold font-mono text-base">{formatMoney(10)}</strong>
         </div>
       </div>
     </div>
@@ -608,7 +608,7 @@ const StockEquityAid: React.FC<{ formatMoney: (n: number) => string }> = ({ form
 const BondYieldAid: React.FC<{ formatMoney: (n: number) => string }> = ({ formatMoney }) => {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <h4 className="font-bold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
+      <h4 className="font-semibold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
         <ShieldAlert className="w-5 h-5 text-amber-400" /> Bond Coupon Payment Schedule
       </h4>
       <div className="flex items-center justify-between text-xs font-semibold bg-slate-800/50 p-4 rounded-xl border border-slate-700">
@@ -629,7 +629,7 @@ const PortfolioAllocationAid: React.FC = () => {
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <h4 className="font-bold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
+      <h4 className="font-semibold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
         <Sliders className="w-5 h-5 text-indigo-400" /> Rule of 100 Asset Allocation Slider
       </h4>
 
@@ -661,7 +661,7 @@ const PortfolioAllocationAid: React.FC = () => {
 const DcaSimulatorAid: React.FC<{ formatMoney: (n: number) => string }> = ({ formatMoney }) => {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <h4 className="font-bold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
+      <h4 className="font-semibold text-slate-100 flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
         <TrendingUp className="w-5 h-5 text-emerald-400" /> DCA vs Lump Sum in Market Dips
       </h4>
       <div className="p-4 bg-slate-800/40 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-2">
