@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider } from './context/AppContext';
 import { Navbar } from './components/Navbar';
 import { ToastContainer } from './components/Toast';
@@ -14,20 +14,43 @@ import { ProfilePage } from './pages/ProfilePage';
 import { AuthModal } from './pages/AuthModal';
 
 const MainContent: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    const hash = window.location.hash.replace('#', '');
+    return hash || 'dashboard';
+  });
   const [currentConceptId, setCurrentConceptId] = useState<string>('what-is-a-stock');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
+  const navigateToTab = (tab: string, pushHistory = true) => {
+    setActiveTab(tab);
+    if (pushHistory) {
+      window.history.pushState({ tab }, '', '#' + tab);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const initialTab = window.location.hash.replace('#', '') || 'dashboard';
+    window.history.replaceState({ tab: initialTab }, '', '#' + initialTab);
+
+    const handlePopState = (event: PopStateEvent) => {
+      const targetTab = event.state?.tab || window.location.hash.replace('#', '') || 'dashboard';
+      setActiveTab(targetTab);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const handleSelectConcept = (conceptId: string) => {
     setCurrentConceptId(conceptId);
-    setActiveTab('module');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigateToTab('module');
   };
 
   const handleStartQuiz = (conceptId: string) => {
     setCurrentConceptId(conceptId);
-    setActiveTab('quiz');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigateToTab('quiz');
   };
 
   return (
@@ -36,26 +59,20 @@ const MainContent: React.FC = () => {
         {activeTab !== 'landing' && (
           <Navbar
             activeTab={activeTab}
-            setActiveTab={tab => {
-              setActiveTab(tab);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
+            setActiveTab={tab => navigateToTab(tab)}
             openAuthModal={() => setIsAuthOpen(true)}
           />
         )}
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <main className="w-full px-6 lg:px-8 pt-3">
           {activeTab === 'landing' && (
-            <LandingPage onStart={() => setActiveTab('dashboard')} />
+            <LandingPage onStart={() => navigateToTab('dashboard')} />
           )}
 
           {activeTab === 'dashboard' && (
             <Dashboard
               onSelectConcept={handleSelectConcept}
-              onNavigate={tab => {
-                setActiveTab(tab);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onNavigate={tab => navigateToTab(tab)}
             />
           )}
 
@@ -66,7 +83,7 @@ const MainContent: React.FC = () => {
           {activeTab === 'module' && (
             <StudyModulePage
               conceptId={currentConceptId}
-              onBackToRoadmap={() => setActiveTab('roadmap')}
+              onBackToRoadmap={() => navigateToTab('roadmap')}
               onStartQuiz={handleStartQuiz}
             />
           )}
@@ -74,10 +91,11 @@ const MainContent: React.FC = () => {
           {activeTab === 'quiz' && (
             <QuizPage
               conceptId={currentConceptId}
-              onBackToModule={() => setActiveTab('module')}
-              onGoToRoadmap={() => setActiveTab('roadmap')}
-              onGoToSimulator={() => setActiveTab('simulator')}
-            />
+              onBackToModule={() => navigateToTab('module')}
+              onGoToRoadmap={() => navigateToTab('roadmap')}
+              onGoToSimulator={() => navigateToTab('simulator')}
+
+              />
           )}
 
           {activeTab === 'simulator' && (
@@ -99,7 +117,7 @@ const MainContent: React.FC = () => {
       </div>
       
       <footer className="w-full bg-brand-black border-t border-brand-card py-4 mt-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-6 lg:px-8">
           <p className="text-brand-muted text-xs text-center leading-relaxed">
             TradeWise is an educational simulation platform. All content is for learning purposes only and does not constitute financial advice. Paper trading results do not reflect real market outcomes. Please consult a SEBI registered financial advisor before making any real investment decisions.
           </p>

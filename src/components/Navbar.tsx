@@ -23,16 +23,16 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-brand-black/95 backdrop-blur-md border-b border-brand-black">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header className="sticky top-0 z-40 bg-brand-black/60 backdrop-blur-md border-b border-brand-card pt-1">
+      <div className="w-full px-6 lg:px-8">
+        <div className="flex items-center justify-between h-12">
           {/* Logo & Wordmark */}
           <div
             onClick={() => setActiveTab('dashboard')}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
-            <div className="w-10 h-10 rounded-lg bg-brand-card flex items-center justify-center group-hover:scale-105 transition-transform">
-              <CandlestickChart className="w-5 h-5 text-brand-orange" />
+            <div className="w-8 h-8 rounded-lg bg-brand-card flex items-center justify-center group-hover:scale-105 transition-transform">
+              <CandlestickChart className="w-4 h-4 text-brand-orange" />
             </div>
             <span className="font-extrabold text-xl text-brand-light tracking-tight flex items-center gap-1">
               TradeWise
@@ -40,7 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
           </div>
 
           {/* Nav Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-1 bg-brand-dark p-1.5 rounded-lg border border-brand-dark">
+          <nav className="hidden md:flex items-center gap-1 bg-brand-dark p-1 rounded-lg border border-brand-dark">
             {navItems.map(item => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -48,7 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     isActive
                       ? 'bg-brand-orange text-brand-black shadow-md shadow-brand-orange/20'
                       : 'text-brand-muted hover:text-brand-light hover:bg-brand-card'
@@ -109,7 +109,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center gap-1 text-[10px] font-semibold py-1 px-3 rounded-xl transition-all ${
+              className={`flex flex-col items-center gap-1 text-[10px] font-semibold py-2 px-3 rounded-xl transition-all cursor-pointer ${
                 isActive ? 'text-brand-orange font-bold' : 'text-brand-muted'
               }`}
             >

@@ -6,11 +6,11 @@ export const LandingPage: React.FC<{ onStart: () => void }> = ({ onStart }) => {
   const { formatMoney } = useApp();
 
   return (
-    <div className="min-h-screen bg-brand-dark text-brand-light selection:bg-brand-orange selection:text-brand-black">
+    <div className="w-full min-h-screen bg-brand-dark text-brand-light selection:bg-brand-orange selection:text-brand-black">
       {/* Hero Section */}
       <section className="relative pt-20 pb-16 md:pt-28 md:pb-24 px-4 overflow-hidden">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-orange/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="max-w-5xl mx-auto text-center relative z-10 space-y-6">
+        <div className="w-full text-center relative z-10 space-y-6">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-card border border-brand-card text-brand-muted text-xs font-semibold">
             <Sparkles className="w-4 h-4 text-brand-muted" /> Designed for College Students & Early Professionals
           </div>
@@ -63,7 +63,7 @@ export const LandingPage: React.FC<{ onStart: () => void }> = ({ onStart }) => {
 
       {/* Feature Loop Grid: Learn -> Practice -> Compete */}
       <section className="py-16 px-4 bg-brand-card/50 border-y border-brand-card">
-        <div className="max-w-6xl mx-auto space-y-12">
+        <div className="w-full space-y-12">
           <div className="text-center space-y-2">
             <h2 className="text-2xl md:text-3xl font-bold text-brand-light">The 3-Step Mastery Loop</h2>
             <p className="text-brand-muted text-sm">How TradeWise turns complete beginners into confident investors.</p>

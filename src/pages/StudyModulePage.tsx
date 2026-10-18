@@ -32,7 +32,7 @@ export const StudyModulePage: React.FC<{
   });
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-16">
+    <div className="w-full space-y-8 pb-16">
       {/* Top Bar Navigation */}
       <div className="flex items-center justify-between">
         <button

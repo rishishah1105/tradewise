@@ -68,7 +68,7 @@ export const DevEnginePage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-16">
+    <div className="w-full space-y-8 pb-16">
       {/* Header Banner */}
       <div className="bg-brand-card border border-brand-dark rounded-lg p-6 sm:p-8 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-2">

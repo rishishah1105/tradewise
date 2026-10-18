@@ -78,7 +78,7 @@ export const ProfilePage: React.FC = () => {
   const { columns, monthLabels } = generateHeatmapMatrix();
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-16">
+    <div className="w-full space-y-8 pb-16">
       {/* User Header Profile Card */}
       <div className="bg-brand-card border-none rounded-lg p-6 sm:p-8 shadow-xl flex flex-col sm:flex-row items-center gap-6">
         <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-brand-card border-2 border-brand-orange/30 flex items-center justify-center shrink-0 shadow-lg shadow-brand-orange/10">

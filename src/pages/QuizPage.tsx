@@ -82,7 +82,7 @@ export const QuizPage: React.FC<{
     const earnedXP = isPassed ? module.xpReward + (scorePercent === 100 ? 50 : 0) : 0;
 
     return (
-      <div className="max-w-2xl mx-auto space-y-8 py-8 px-4 text-center">
+      <div className="w-full space-y-8 py-8 px-4 text-center">
         <div className="bg-brand-card border-none rounded-lg p-8 shadow-2xl space-y-6">
           <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center bg-brand-dark border border-brand-dark">
             {isPassed ? (
@@ -142,7 +142,7 @@ export const QuizPage: React.FC<{
   const isCorrect = selectedOption === currentQuestion.correctAnswer;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-16">
+    <div className="w-full space-y-6 pb-16">
       {/* Quiz Header Bar */}
       <div className="flex items-center justify-between">
         <button

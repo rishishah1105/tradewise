@@ -61,7 +61,7 @@ export const LeaderboardPage: React.FC = () => {
   const top3 = currentRankedList[2];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-16">
+    <div className="w-full space-y-8 pb-16">
       {/* Header Banner */}
       <div className="bg-brand-card border-none rounded-lg p-6 sm:p-8 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-2">

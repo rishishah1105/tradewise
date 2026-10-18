@@ -22,7 +22,7 @@ export const RoadmapPage: React.FC<{ onSelectConcept: (conceptId: string) => voi
   };
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="w-full space-y-8 pb-12">
       {/* Persistent HP Bar Header */}
       <div className="bg-brand-card border-none rounded-lg p-6 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

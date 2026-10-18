@@ -91,7 +91,7 @@ export const SimulatorPage: React.FC = () => {
   const historyData = chartTimeframe === '1D' ? currentStock.history1D : (chartTimeframe === '1W' ? currentStock.history1W : (chartTimeframe === '1M' ? currentStock.history1M : (chartTimeframe === '3M' ? currentStock.history3M : currentStock.history1Y)));
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] bg-brand-black text-brand-light font-sans overflow-hidden border-t border-brand-dark">
+    <div className="w-full flex flex-col h-[calc(100vh-48px)] bg-brand-black text-brand-light font-sans overflow-hidden border-t border-brand-dark">
       {/* Portfolio Summary Header Bar (Tight) */}
       <div className="flex items-center justify-between px-4 py-1.5 bg-brand-dark border-b border-brand-card text-xs shrink-0">
         <div className="flex items-center gap-6 font-mono">

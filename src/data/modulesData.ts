@@ -1258,7 +1258,7 @@ Result: High volatility. The investor must be psychologically prepared to watch 
 
   // 7. MARKET ORDERS VS LIMIT ORDERS
   {
-    id: 'market-vs-limit-orders',
+    id: 'market-vs-limit-orders-basics',
     title: 'Market vs. Limit Orders',
     category: 'Instruments',
     categoryOrder: 7,
