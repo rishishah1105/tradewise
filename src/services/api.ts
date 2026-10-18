@@ -32,36 +32,113 @@ export const checkBackendHealth = async (): Promise<{ isOnline: boolean; dbStatu
   }
 };
 
+export const getAuthHeaders = (extraHeaders: Record<string, string> = {}) => {
+  const token = localStorage.getItem('tradewise_session_token');
+  const headers: Record<string, string> = { ...extraHeaders };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    headers['x-session-token'] = token;
+  }
+  return headers;
+};
+
 export const api = {
   // Auth & OAuth
-  async loginWithGoogle(payload: { email: string; name?: string; avatarUrl?: string; credential?: string }) {
+  async getAuthConfig() {
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/google`, {
+      const res = await fetch(`${API_BASE_URL}/auth/config`);
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch (err) {
+      console.warn('[API] getAuthConfig error:', err);
+    }
+    return null;
+  },
+
+  async getGoogleAuthUrl(destination = 'dashboard') {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/google/url?destination=${encodeURIComponent(destination)}`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('[API] getGoogleAuthUrl error:', err);
+    }
+    return { success: false, isConfigured: false };
+  },
+
+  async verifyGoogleCredential(credential: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/google/verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
+        body: JSON.stringify({ credential }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.token) {
+          localStorage.setItem('tradewise_session_token', json.token);
+        }
+        return json.data;
+      }
+    } catch (err) {
+      console.warn('[API] verifyGoogleCredential error:', err);
+    }
+    return null;
+  },
+
+  async loginWithGoogle(credential: string) {
+    return this.verifyGoogleCredential(credential);
+  },
+
+
+  async getSession() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/session`, {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json;
+      }
+    } catch (err) {
+      console.warn('[API] getSession error:', err);
+    }
+    return null;
+  },
+
+  async logout() {
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+    } catch (err) {
+      console.warn('[API] logout error:', err);
+    } finally {
+      localStorage.removeItem('tradewise_session_token');
+      localStorage.removeItem('tradewise_logged_in_email');
+    }
+  },
+
+  // User Profile
+  async getUserProfile() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/user/profile`, {
+        headers: getAuthHeaders(),
+        credentials: 'include',
       });
       if (res.ok) {
         const json = await res.json();
         return json.data;
       }
     } catch (err) {
-      console.warn('[API] loginWithGoogle error:', err);
-    }
-    return null;
-  },
-
-  // User Profile
-  async getUserProfile(email?: string) {
-    try {
-      const url = email ? `${API_BASE_URL}/user/profile?email=${encodeURIComponent(email)}` : `${API_BASE_URL}/user/profile`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const json = await res.json();
-        return json.data;
-      }
-    } catch (err) {
-      console.warn('[API] getUserProfile fallback to local state:', err);
+      console.warn('[API] getUserProfile fallback:', err);
     }
     return null;
   },
@@ -214,4 +291,212 @@ export const api = {
     }
     return null;
   },
+
+  // ========================================================
+  // PHASE 3: AUDITABLE PAPER TRADING & EULERPOOL MARKET DATA
+  // ========================================================
+
+  async getPaperAccount(userId?: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/paper-trading/account`, {
+        headers: userId ? { 'x-user-id': userId } : undefined,
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch (err) {
+      console.warn('[API] getPaperAccount fallback:', err);
+    }
+    return null;
+  },
+
+  async getPaperPortfolio(userId?: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/paper-trading/portfolio`, {
+        headers: userId ? { 'x-user-id': userId } : undefined,
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch (err) {
+      console.warn('[API] getPaperPortfolio fallback:', err);
+    }
+    return null;
+  },
+
+  async resetPaperSimulation(reason = 'User requested simulation reset', userId?: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/paper-trading/reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(userId ? { 'x-user-id': userId } : {}),
+        },
+        body: JSON.stringify({ confirm: true, reason }),
+      });
+      return await res.json();
+    } catch (err) {
+      console.warn('[API] resetPaperSimulation error:', err);
+      return { success: false, message: 'Server offline' };
+    }
+  },
+
+  async placePaperOrder(orderData: {
+    symbol: string;
+    side: 'BUY' | 'SELL';
+    type: 'MARKET' | 'LIMIT';
+    quantity: number;
+    limitPrice?: number;
+    clientOrderId?: string;
+    userId?: string;
+  }) {
+    try {
+      const { userId, ...body } = orderData;
+      const res = await fetch(`${API_BASE_URL}/paper-trading/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(userId ? { 'x-user-id': userId } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+      return await res.json();
+    } catch (err) {
+      console.warn('[API] placePaperOrder error:', err);
+      return { success: false, message: 'Server offline' };
+    }
+  },
+
+  async cancelPaperOrder(orderId: string, userId?: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/paper-trading/orders/${orderId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(userId ? { 'x-user-id': userId } : {}),
+        },
+      });
+      return await res.json();
+    } catch (err) {
+      console.warn('[API] cancelPaperOrder error:', err);
+      return { success: false, message: 'Server offline' };
+    }
+  },
+
+  async getPaperTransactions(userId?: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/paper-trading/transactions`, {
+        headers: userId ? { 'x-user-id': userId } : undefined,
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch (err) {
+      console.warn('[API] getPaperTransactions error:', err);
+    }
+    return [];
+  },
+
+  async getWatchlist(userId?: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/paper-trading/watchlist`, {
+        headers: userId ? { 'x-user-id': userId } : undefined,
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch (err) {
+      console.warn('[API] getWatchlist error:', err);
+    }
+    return [];
+  },
+
+  async addToWatchlist(symbol: string, name?: string, userId?: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/paper-trading/watchlist`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(userId ? { 'x-user-id': userId } : {}),
+        },
+        body: JSON.stringify({ symbol, name }),
+      });
+      return await res.json();
+    } catch (err) {
+      console.warn('[API] addToWatchlist error:', err);
+      return { success: false };
+    }
+  },
+
+  async removeFromWatchlist(idOrSymbol: string, userId?: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/paper-trading/watchlist/${encodeURIComponent(idOrSymbol)}`, {
+        method: 'DELETE',
+        headers: userId ? { 'x-user-id': userId } : undefined,
+      });
+      return await res.json();
+    } catch (err) {
+      console.warn('[API] removeFromWatchlist error:', err);
+      return { success: false };
+    }
+  },
+
+  async getPaperChallenges(userId?: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/paper-trading/challenges`, {
+        headers: userId ? { 'x-user-id': userId } : undefined,
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch (err) {
+      console.warn('[API] getPaperChallenges error:', err);
+    }
+    return [];
+  },
+
+  async searchMarketData(query: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/market-data/search?query=${encodeURIComponent(query)}`);
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch (err) {
+      console.warn('[API] searchMarketData error:', err);
+    }
+    return [];
+  },
+
+  async getMarketQuote(symbol: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/market-data/quote/${encodeURIComponent(symbol)}`);
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch (err) {
+      console.warn('[API] getMarketQuote error:', err);
+    }
+    return null;
+  },
+
+  async getMarketCandles(symbol: string, timeframe = '1D') {
+    try {
+      const res = await fetch(`${API_BASE_URL}/market-data/history/${encodeURIComponent(symbol)}?timeframe=${timeframe}`);
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch (err) {
+      console.warn('[API] getMarketCandles error:', err);
+    }
+    return [];
+  },
 };
+

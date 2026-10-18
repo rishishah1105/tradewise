@@ -12,7 +12,9 @@
     "server:build": "npm --prefix server run build",
     "db:push": "npm --prefix server run prisma:push",
     "db:studio": "npm --prefix server run prisma:studio",
-    "db:generate": "npm --prefix server run prisma:generate"
+    "db:generate": "npm --prefix server run prisma:generate",
+    "test:server": "npm --prefix server run test",
+    "test": "npm run test:server"
   },
   "dependencies": {
     "@types/canvas-confetti": "^1.9.0",

@@ -127,8 +127,10 @@ interface AppContextType {
 
   // Auth & OAuth State
   isLoggedIn: boolean;
-  loginWithGoogle: (payload: { email: string; name?: string; avatarUrl?: string; credential?: string }) => Promise<boolean>;
-  logout: () => void;
+  isAuthLoading: boolean;
+  loginWithGoogle: (payload: { credential: string }) => Promise<boolean>;
+  logout: () => Promise<void>;
+  startGoogleOAuthRedirect: (destination?: string) => Promise<boolean>;
 
   // User Actions
   completeModuleQuiz: (moduleId: string, scorePercent: number) => void;
@@ -259,6 +261,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Backend & PostgreSQL Database State
   const [backendStatus, setBackendStatus] = useState<'connected' | 'offline' | 'checking'>('checking');
   const [dbStatusText, setDbStatusText] = useState<string>('Checking database...');
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
   const applyRemoteUserData = (remote: any) => {
     if (!remote) return;
@@ -340,21 +344,45 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const checkConnection = async () => {
+    setIsAuthLoading(true);
     try {
+      // Check for OAuth callback URL query parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '');
+      const authSuccess = urlParams.get('auth_success') === 'true' || hashParams.get('auth_success') === 'true';
+      const authError = urlParams.get('auth_error') || hashParams.get('auth_error');
+
+      if (authSuccess) {
+        addToast('Signed In Successfully!', 'Your Google session is active.', 'info');
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+        const cleanHash = window.location.hash.split('?')[0] || '#dashboard';
+        window.history.replaceState({}, document.title, window.location.pathname + cleanHash);
+      } else if (authError) {
+        addToast('Authentication Failed', 'Google login could not be completed. Please try again.', 'info');
+        const cleanHash = window.location.hash.split('?')[0] || '#landing';
+        window.history.replaceState({}, document.title, window.location.pathname + cleanHash);
+      }
+
       const health = await checkBackendHealth();
       if (health.isOnline) {
         setBackendStatus('connected');
         setDbStatusText(health.dbStatus);
 
-        // Synchronize remote PostgreSQL data if available
+        // Validate and restore authenticated server session
         try {
-          const savedEmail = localStorage.getItem('tradewise_logged_in_email');
-          const remote = await api.getUserProfile(savedEmail || undefined);
-          if (remote) {
-            applyRemoteUserData(remote);
+          const session = await api.getSession();
+          if (session?.authenticated && session.data) {
+            applyRemoteUserData(session.data);
+            setIsLoggedIn(true);
+          } else {
+            // Server explicitly rejected or found no valid session
+            localStorage.removeItem('tradewise_session_token');
+            localStorage.removeItem('tradewise_logged_in_email');
+            setIsLoggedIn(false);
+            setUser(prev => ({ ...prev, email: undefined }));
           }
         } catch {
-          // Fallback to local storage silently
+          setIsLoggedIn(false);
         }
       } else {
         setBackendStatus('offline');
@@ -363,15 +391,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch {
       setBackendStatus('offline');
       setDbStatusText('Offline (Local Storage Mode)');
+    } finally {
+      setIsAuthLoading(false);
     }
   };
 
-  const loginWithGoogle = async (payload: { email: string; name?: string; avatarUrl?: string; credential?: string }): Promise<boolean> => {
+  const loginWithGoogle = async (payload: { credential: string }): Promise<boolean> => {
     try {
-      const remote = await api.loginWithGoogle(payload);
+      const remote = await api.verifyGoogleCredential(payload.credential);
       if (remote) {
         applyRemoteUserData(remote);
-        localStorage.setItem('tradewise_logged_in_email', remote.email || payload.email);
+        setIsLoggedIn(true);
         confetti({
           particleCount: 80,
           spread: 70,
@@ -386,17 +416,37 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return false;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.logout();
+    } catch (err) {
+      console.warn('[Auth] Logout warning:', err);
+    }
+    localStorage.removeItem('tradewise_session_token');
     localStorage.removeItem('tradewise_logged_in_email');
-    setUser(INITIAL_USER);
-    addToast('Signed Out', 'You have been switched to Guest Mode.', 'info');
+    setIsLoggedIn(false);
+    setUser({ ...INITIAL_USER, email: undefined });
+    window.location.hash = '#landing';
+    addToast('Signed Out', 'You have been signed out successfully.', 'info');
   };
 
-  const isLoggedIn = Boolean(user.email || localStorage.getItem('tradewise_logged_in_email'));
+  const startGoogleOAuthRedirect = async (destination = 'dashboard'): Promise<boolean> => {
+    try {
+      const config = await api.getGoogleAuthUrl(destination);
+      if (config?.isConfigured && config.url) {
+        window.location.href = config.url;
+        return true;
+      }
+    } catch (err) {
+      console.warn('[OAuth] Error checking Google OAuth URL:', err);
+    }
+    return false;
+  };
 
   useEffect(() => {
     checkConnection();
   }, []);
+
 
   const logActivity = () => {
     const today = toDateKey();
@@ -1137,8 +1187,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       dbStatusText,
       recheckBackend: checkConnection,
       isLoggedIn,
+      isAuthLoading,
       loginWithGoogle,
-      logout
+      logout,
+      startGoogleOAuthRedirect
     }}>
       {children}
     </AppContext.Provider>

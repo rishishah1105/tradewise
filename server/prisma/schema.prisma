@@ -29,6 +29,10 @@ model User {
   joinedAt              String?
   cashBalance           Float             @default(100000.0)
   startingBalance       Float             @default(100000.0)
+  googleId              String?           @unique
+  authProvider          String            @default("google")
+  lastLoginAt           DateTime          @default(now())
+  onboardingCompleted   Boolean           @default(false)
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
@@ -39,8 +43,30 @@ model User {
   trades                TradeLog[]
   badges                UserBadge[]
   dailyQuests           DailyQuestState[]
+  sessions              Session[]
+
+  // Phase 3 Paper Trading Relations
+  paperAccount          PaperTradingAccount?
+  watchlists            WatchlistItem[]
+  learningChallenges    LearningChallengeProgress[]
 
   @@map("users")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  lastActiveAt DateTime @default(now())
+  userAgent    String?
+  ipAddress    String?
+
+  @@index([userId])
+  @@index([token])
+  @@map("sessions")
 }
 
 model ActivityLog {
@@ -132,4 +158,170 @@ model DailyQuestState {
 
   @@unique([userId, dateKey, questId])
   @@map("daily_quest_states")
+}
+
+// ========================================================
+// PHASE 3: AUDITABLE PAPER TRADING & PORTFOLIO ENGINE
+// ========================================================
+
+model PaperTradingAccount {
+  id              String                @id @default(uuid())
+  userId          String                @unique
+  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currency        String                @default("INR")
+  initialCash     Float                 @default(100000.0)
+  currentCash     Float                 @default(100000.0)
+  activeEpisodeId String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  episodes        PaperTradingEpisode[]
+  ledgerEntries   CashLedgerEntry[]
+  positions       PaperPosition[]
+  orders          PaperOrder[]
+
+  @@map("paper_trading_accounts")
+}
+
+model PaperTradingEpisode {
+  id              String               @id @default(uuid())
+  accountId       String
+  account         PaperTradingAccount  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  episodeNumber   Int                  @default(1)
+  startingCash    Float                @default(100000.0)
+  endingCash      Float?
+  status          String               @default("ACTIVE") // ACTIVE | RESET
+  resetReason     String?
+  startedAt       DateTime             @default(now())
+  endedAt         DateTime?
+
+  ledgerEntries   CashLedgerEntry[]
+  positions       PaperPosition[]
+  orders          PaperOrder[]
+
+  @@map("paper_trading_episodes")
+}
+
+model CashLedgerEntry {
+  id           String              @id @default(uuid())
+  accountId    String
+  account      PaperTradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  episodeId    String
+  episode      PaperTradingEpisode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  entryType    String              // INITIAL_CAPITAL | TRADE_BUY | TRADE_SELL | FEE | RESET_ADJUSTMENT
+  amount       Float               // Signed: - for buy/fee, + for sell/initial
+  balanceAfter Float               // Running balance after entry
+  referenceId  String?             // e.g. orderId or fillId
+  description  String
+  timestamp    DateTime            @default(now())
+
+  @@index([accountId, episodeId])
+  @@map("cash_ledger_entries")
+}
+
+model PaperPosition {
+  id             String              @id @default(uuid())
+  accountId      String
+  account        PaperTradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  episodeId      String
+  episode        PaperTradingEpisode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  symbol         String
+  companyName    String?
+  quantity       Int                 @default(0)
+  avgCost        Float               @default(0.0)
+  totalCostBasis Float               @default(0.0)
+  realizedPnl    Float               @default(0.0)
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([accountId, episodeId, symbol])
+  @@map("paper_positions")
+}
+
+model PaperOrder {
+  id              String              @id @default(uuid())
+  accountId       String
+  account         PaperTradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  episodeId       String
+  episode         PaperTradingEpisode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  symbol          String
+  companyName     String?
+  side            String              // BUY | SELL
+  type            String              // MARKET | LIMIT
+  quantity        Int
+  limitPrice      Float?
+  status          String              @default("PENDING") // PENDING | OPEN | FILLED | CANCELLED | REJECTED | EXPIRED
+  rejectionReason String?
+  clientOrderId   String?             // For idempotency
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  fills           PaperOrderFill[]
+
+  @@index([accountId, episodeId, status])
+  @@map("paper_orders")
+}
+
+model PaperOrderFill {
+  id                String     @id @default(uuid())
+  orderId           String
+  order             PaperOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  shares            Int
+  fillPrice         Float
+  slippageBps       Float      @default(0.0)
+  fee               Float      @default(0.0)
+  grossAmount       Float
+  netAmount         Float
+  marketObservation String     // JSON snapshot of quote at fill time
+  executedAt        DateTime   @default(now())
+
+  @@map("paper_order_fills")
+}
+
+model WatchlistItem {
+  id       String   @id @default(uuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol   String
+  name     String
+  exchange String   @default("NSE")
+  addedAt  DateTime @default(now())
+
+  @@unique([userId, symbol])
+  @@map("watchlist_items")
+}
+
+model LearningChallengeProgress {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challengeId String
+  completed   Boolean   @default(false)
+  progress    Int       @default(0)
+  target      Int       @default(1)
+  completedAt DateTime?
+
+  @@unique([userId, challengeId])
+  @@map("learning_challenge_progress")
+}
+
+model MarketDataCache {
+  symbol            String    @id
+  companyName       String?
+  exchange          String    @default("NSE")
+  currency          String    @default("INR")
+  price             Float
+  previousClose     Float?
+  change            Float?
+  changePercent     Float?
+  high              Float?
+  low               Float?
+  volume            Float?
+  priceType         String    @default("delayed") // delayed | real-time | historical | simulated | unknown
+  dataSource        String    @default("Eulerpool")
+  freshnessStatus   String    @default("delayed") // fresh | delayed | stale | unavailable
+  providerTimestamp DateTime?
+  cachedAt          DateTime  @default(now())
+  expiresAt         DateTime
+
+  @@map("market_data_cache")
 }

@@ -1,5 +1,5 @@
 export interface CandlestickPoint {
-  time: string;
+  time: number | string;
   open: number;
   high: number;
   low: number;
@@ -38,7 +38,7 @@ export interface StockInstrument {
 
 export const generateDailyHistory = (basePrice: number, daysCount: number, volatility = 0.02): CandlestickPoint[] => {
   const points: CandlestickPoint[] = [];
-  let currentClose = basePrice * (1 - volatility * Math.sqrt(daysCount) * 0.5);
+  let currentClose = basePrice * (1 - volatility * Math.sqrt(daysCount) * 0.35);
   const now = new Date();
 
   for (let i = daysCount - 1; i >= 0; i--) {
@@ -55,7 +55,7 @@ export const generateDailyHistory = (basePrice: number, daysCount: number, volat
     const volume = Math.floor(Math.random() * 500000 + 100000);
 
     points.push({
-      time: ts as any,
+      time: ts,
       open: Number(open.toFixed(2)),
       high: Number(high.toFixed(2)),
       low: Number(low.toFixed(2)),
@@ -68,13 +68,19 @@ export const generateDailyHistory = (basePrice: number, daysCount: number, volat
   return points;
 };
 
-export const generateHistory = (basePrice: number, pointsCount: number, volatility = 0.012): CandlestickPoint[] => {
+export const generateHistory = (
+  basePrice: number,
+  pointsCount = 320,
+  volatility = 0.012,
+  intervalMinutes = 15
+): CandlestickPoint[] => {
   const points: CandlestickPoint[] = [];
-  let currentClose = basePrice * (1 - volatility * 2);
+  let currentClose = basePrice * (1 - volatility * Math.sqrt(pointsCount) * 0.25);
   const now = new Date();
 
   for (let i = pointsCount - 1; i >= 0; i--) {
-    const timeLabel = new Date(now.getTime() - i * 15 * 60 * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    const d = new Date(now.getTime() - i * intervalMinutes * 60 * 1000);
+    const ts = Math.floor(d.getTime() / 1000);
     const change = (Math.random() - 0.49) * volatility * currentClose;
     const open = currentClose;
     const close = Math.max(1, open + change);
@@ -83,7 +89,7 @@ export const generateHistory = (basePrice: number, pointsCount: number, volatili
     const volume = Math.floor(Math.random() * 50000 + 10000);
 
     points.push({
-      time: timeLabel,
+      time: ts,
       open: Number(open.toFixed(2)),
       high: Number(high.toFixed(2)),
       low: Number(low.toFixed(2)),
@@ -129,10 +135,10 @@ export const INITIAL_STOCKS: StockInstrument[] = [
     peRatio: 28.4,
     marketCap: '₹20.2 Lakh Cr',
     description: 'India\'s largest multinational conglomerate operating in energy, petrochemicals, Jio telecom, and retail.',
-    history1D: generateHistory(2985.40, 24, 0.008),
-    history1W: generateHistory(2985.40, 30, 0.015),
-    history1M: generateHistory(2985.40, 40, 0.025),
-    history3M: generateDailyHistory(2985.40, 90, 0.03),
+    history1D: generateHistory(2985.40, 320, 0.008, 15),
+    history1W: generateHistory(2985.40, 350, 0.015, 30),
+    history1M: generateHistory(2985.40, 400, 0.025, 60),
+    history3M: generateDailyHistory(2985.40, 120, 0.03),
     history1Y: generateDailyHistory(2985.40, 365, 0.04),
     orderBook: generateOrderBook(2985.40)
   },
@@ -151,10 +157,10 @@ export const INITIAL_STOCKS: StockInstrument[] = [
     peRatio: 32.1,
     marketCap: '₹15.2 Lakh Cr',
     description: 'Global leader in IT services, consulting, and business solutions under Tata Group.',
-    history1D: generateHistory(4210.50, 24, 0.007),
-    history1W: generateHistory(4210.50, 30, 0.012),
-    history1M: generateHistory(4210.50, 40, 0.02),
-    history3M: generateDailyHistory(4210.50, 90, 0.03),
+    history1D: generateHistory(4210.50, 320, 0.007, 15),
+    history1W: generateHistory(4210.50, 350, 0.012, 30),
+    history1M: generateHistory(4210.50, 400, 0.02, 60),
+    history3M: generateDailyHistory(4210.50, 120, 0.03),
     history1Y: generateDailyHistory(4210.50, 365, 0.04),
     orderBook: generateOrderBook(4210.50)
   },
@@ -173,10 +179,10 @@ export const INITIAL_STOCKS: StockInstrument[] = [
     peRatio: 27.8,
     marketCap: '₹7.6 Lakh Cr',
     description: 'Pioneer Indian multinational information technology company offering next-generation digital services.',
-    history1D: generateHistory(1845.20, 24, 0.009),
-    history1W: generateHistory(1845.20, 30, 0.016),
-    history1M: generateHistory(1845.20, 40, 0.024),
-    history3M: generateDailyHistory(1845.20, 90, 0.03),
+    history1D: generateHistory(1845.20, 320, 0.009, 15),
+    history1W: generateHistory(1845.20, 350, 0.016, 30),
+    history1M: generateHistory(1845.20, 400, 0.024, 60),
+    history3M: generateDailyHistory(1845.20, 120, 0.03),
     history1Y: generateDailyHistory(1845.20, 365, 0.04),
     orderBook: generateOrderBook(1845.20)
   },
@@ -195,10 +201,10 @@ export const INITIAL_STOCKS: StockInstrument[] = [
     peRatio: 19.5,
     marketCap: '₹12.5 Lakh Cr',
     description: 'India\'s largest private sector bank providing retail, wholesale, and corporate banking solutions.',
-    history1D: generateHistory(1640.80, 24, 0.006),
-    history1W: generateHistory(1640.80, 30, 0.012),
-    history1M: generateHistory(1640.80, 40, 0.018),
-    history3M: generateDailyHistory(1640.80, 90, 0.03),
+    history1D: generateHistory(1640.80, 320, 0.006, 15),
+    history1W: generateHistory(1640.80, 350, 0.012, 30),
+    history1M: generateHistory(1640.80, 400, 0.018, 60),
+    history3M: generateDailyHistory(1640.80, 120, 0.03),
     history1Y: generateDailyHistory(1640.80, 365, 0.04),
     orderBook: generateOrderBook(1640.80)
   },
@@ -217,10 +223,10 @@ export const INITIAL_STOCKS: StockInstrument[] = [
     peRatio: 18.2,
     marketCap: '₹8.3 Lakh Cr',
     description: 'Leading private bank in India with extensive digital branch network and high asset growth.',
-    history1D: generateHistory(1180.40, 24, 0.008),
-    history1W: generateHistory(1180.40, 30, 0.014),
-    history1M: generateHistory(1180.40, 40, 0.022),
-    history3M: generateDailyHistory(1180.40, 90, 0.03),
+    history1D: generateHistory(1180.40, 320, 0.008, 15),
+    history1W: generateHistory(1180.40, 350, 0.014, 30),
+    history1M: generateHistory(1180.40, 400, 0.022, 60),
+    history3M: generateDailyHistory(1180.40, 120, 0.03),
     history1Y: generateDailyHistory(1180.40, 365, 0.04),
     orderBook: generateOrderBook(1180.40)
   },
@@ -239,10 +245,10 @@ export const INITIAL_STOCKS: StockInstrument[] = [
     peRatio: 10.8,
     marketCap: '₹7.3 Lakh Cr',
     description: 'Largest public sector bank and financial services statutory body in India.',
-    history1D: generateHistory(825.60, 24, 0.01),
-    history1W: generateHistory(825.60, 30, 0.018),
-    history1M: generateHistory(825.60, 40, 0.026),
-    history3M: generateDailyHistory(825.60, 90, 0.03),
+    history1D: generateHistory(825.60, 320, 0.01, 15),
+    history1W: generateHistory(825.60, 350, 0.018, 30),
+    history1M: generateHistory(825.60, 400, 0.026, 60),
+    history3M: generateDailyHistory(825.60, 120, 0.03),
     history1Y: generateDailyHistory(825.60, 365, 0.04),
     orderBook: generateOrderBook(825.60)
   },
@@ -261,10 +267,10 @@ export const INITIAL_STOCKS: StockInstrument[] = [
     peRatio: 16.4,
     marketCap: '₹3.9 Lakh Cr',
     description: 'Leading global automobile manufacturer of cars, utility vehicles, trucks, buses, and Jaguar Land Rover.',
-    history1D: generateHistory(1065.30, 24, 0.015),
-    history1W: generateHistory(1065.30, 30, 0.025),
-    history1M: generateHistory(1065.30, 40, 0.035),
-    history3M: generateDailyHistory(1065.30, 90, 0.03),
+    history1D: generateHistory(1065.30, 320, 0.015, 15),
+    history1W: generateHistory(1065.30, 350, 0.025, 30),
+    history1M: generateHistory(1065.30, 400, 0.035, 60),
+    history3M: generateDailyHistory(1065.30, 120, 0.03),
     history1Y: generateDailyHistory(1065.30, 365, 0.04),
     orderBook: generateOrderBook(1065.30)
   },
@@ -283,10 +289,10 @@ export const INITIAL_STOCKS: StockInstrument[] = [
     peRatio: 29.1,
     marketCap: '₹6.1 Lakh Cr',
     description: 'Major consumer goods conglomerate in FMCG, hotels, paperboards, packaging, and agri-business.',
-    history1D: generateHistory(492.50, 24, 0.006),
-    history1W: generateHistory(492.50, 30, 0.01),
-    history1M: generateHistory(492.50, 40, 0.016),
-    history3M: generateDailyHistory(492.50, 90, 0.03),
+    history1D: generateHistory(492.50, 320, 0.006, 15),
+    history1W: generateHistory(492.50, 350, 0.01, 30),
+    history1M: generateHistory(492.50, 400, 0.016, 60),
+    history3M: generateDailyHistory(492.50, 120, 0.03),
     history1Y: generateDailyHistory(492.50, 365, 0.04),
     orderBook: generateOrderBook(492.50)
   },
@@ -304,10 +310,10 @@ export const INITIAL_STOCKS: StockInstrument[] = [
     volume: '220M',
     marketCap: 'Benchmark',
     description: 'NSE benchmark stock market index representing weighted average of 50 top Indian companies.',
-    history1D: generateHistory(24540.20, 24, 0.004),
-    history1W: generateHistory(24540.20, 30, 0.008),
-    history1M: generateHistory(24540.20, 40, 0.012),
-    history3M: generateDailyHistory(24540.20, 90, 0.03),
+    history1D: generateHistory(24540.20, 320, 0.004, 15),
+    history1W: generateHistory(24540.20, 350, 0.008, 30),
+    history1M: generateHistory(24540.20, 400, 0.012, 60),
+    history3M: generateDailyHistory(24540.20, 120, 0.03),
     history1Y: generateDailyHistory(24540.20, 365, 0.04),
     orderBook: generateOrderBook(24540.20)
   },
@@ -325,15 +331,14 @@ export const INITIAL_STOCKS: StockInstrument[] = [
     volume: '150M',
     marketCap: 'Benchmark',
     description: 'BSE benchmark index tracking 30 established and financially sound companies listed on BSE.',
-    history1D: generateHistory(80435.80, 24, 0.004),
-    history1W: generateHistory(80435.80, 30, 0.008),
-    history1M: generateHistory(80435.80, 40, 0.012),
-    history3M: generateDailyHistory(80435.80, 90, 0.03),
+    history1D: generateHistory(80435.80, 320, 0.004, 15),
+    history1W: generateHistory(80435.80, 350, 0.008, 30),
+    history1M: generateHistory(80435.80, 400, 0.012, 60),
+    history3M: generateDailyHistory(80435.80, 120, 0.03),
     history1Y: generateDailyHistory(80435.80, 365, 0.04),
     orderBook: generateOrderBook(80435.80)
   }
 ];
-
 
 export const generateMockStock = (symbol: string, name: string): StockInstrument => {
   const basePrice = 100 + Math.random() * 900;
@@ -352,10 +357,10 @@ export const generateMockStock = (symbol: string, name: string): StockInstrument
     marketCap: '10B',
     description: 'Simulated data for ' + name,
     isSimulated: true,
-    history1D: generateHistory(basePrice, 78, 0.01),
-    history1W: generateHistory(basePrice, 100, 0.02),
-    history1M: generateHistory(basePrice, 160, 0.03),
-    history3M: generateDailyHistory(basePrice, 90, 0.03),
+    history1D: generateHistory(basePrice, 320, 0.01, 15),
+    history1W: generateHistory(basePrice, 350, 0.02, 30),
+    history1M: generateHistory(basePrice, 400, 0.03, 60),
+    history3M: generateDailyHistory(basePrice, 120, 0.03),
     history1Y: generateDailyHistory(basePrice, 365, 0.04),
     orderBook: generateOrderBook(basePrice)
   };

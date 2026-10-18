@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AppProvider } from './context/AppContext';
+import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/Navbar';
 import { ToastContainer } from './components/Toast';
 import { LandingPage } from './pages/LandingPage';
@@ -18,19 +18,58 @@ import { PrivacyPolicyPage } from './pages/info/PrivacyPolicyPage';
 import { TermsPage } from './pages/info/TermsPage';
 import { DisclaimerPage } from './pages/info/DisclaimerPage';
 
-const VALID_TABS = ['landing','dashboard','roadmap','module','quiz','simulator','leaderboard','profile','about','contact','privacy','terms','disclaimer'] as const;
-const sanitizeTab = (t: string) => (VALID_TABS as readonly string[]).includes(t) ? t : 'dashboard';
+const VALID_TABS = [
+  'landing',
+  'dashboard',
+  'roadmap',
+  'module',
+  'quiz',
+  'simulator',
+  'leaderboard',
+  'profile',
+  'about',
+  'contact',
+  'privacy',
+  'terms',
+  'disclaimer',
+] as const;
+
+const PROTECTED_TABS = new Set(['dashboard', 'roadmap', 'module', 'quiz', 'simulator', 'leaderboard', 'profile']);
+
+const sanitizeTab = (t: string, loggedIn: boolean) => {
+  const clean = t.split('?')[0];
+  if ((VALID_TABS as readonly string[]).includes(clean)) {
+    return clean;
+  }
+  return loggedIn ? 'dashboard' : 'landing';
+};
 
 const MainContent: React.FC = () => {
+  const { isLoggedIn, isAuthLoading } = useApp();
   const [activeTab, setActiveTab] = useState<string>(() => {
-    const hash = window.location.hash.replace('#', '');
-    return sanitizeTab(hash);
+    const raw = window.location.hash.replace('#', '');
+    const clean = raw.split('?')[0];
+    if ((VALID_TABS as readonly string[]).includes(clean)) {
+      return clean;
+    }
+    // Default to public landing page for new visitors
+    return 'landing';
   });
+
   const [currentConceptId, setCurrentConceptId] = useState<string>('what-is-a-stock');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [intendedDestination, setIntendedDestination] = useState<string>('dashboard');
 
   const navigateToTab = (tab: string, pushHistory = true) => {
-    const cleanTab = sanitizeTab(tab);
+    const cleanTab = sanitizeTab(tab, isLoggedIn);
+
+    // Route Protection: Prevent unauthorized access to private trading views
+    if (!isLoggedIn && !isAuthLoading && PROTECTED_TABS.has(cleanTab)) {
+      setIntendedDestination(cleanTab);
+      setIsAuthOpen(true);
+      return;
+    }
+
     setActiveTab(cleanTab);
     if (pushHistory) {
       window.history.pushState({ tab: cleanTab }, '', '#' + cleanTab);
@@ -38,20 +77,33 @@ const MainContent: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Synchronize route on popstate and hash change
   useEffect(() => {
-    const initialTab = sanitizeTab(window.location.hash.replace('#', ''));
-    window.history.replaceState({ tab: initialTab }, '', '#' + initialTab);
+    const raw = window.location.hash.replace('#', '');
+    const clean = sanitizeTab(raw, isLoggedIn);
+    window.history.replaceState({ tab: clean }, '', '#' + clean);
 
     const handlePopState = (event: PopStateEvent) => {
       const rawTab = event.state?.tab || window.location.hash.replace('#', '');
-      const targetTab = sanitizeTab(rawTab);
+      const targetTab = sanitizeTab(rawTab, isLoggedIn);
       setActiveTab(targetTab);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [isLoggedIn]);
+
+  // Route guard: if user is not logged in and on a protected route, preserve destination and redirect
+  useEffect(() => {
+    if (isAuthLoading) return;
+
+    if (!isLoggedIn && PROTECTED_TABS.has(activeTab)) {
+      setIntendedDestination(activeTab);
+      setActiveTab('landing');
+      setIsAuthOpen(true);
+    }
+  }, [activeTab, isLoggedIn, isAuthLoading]);
 
   const handleSelectConcept = (conceptId: string) => {
     setCurrentConceptId(conceptId);
@@ -66,17 +118,33 @@ const MainContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#0B0F17] text-slate-100 font-sans flex flex-col">
       <div className="flex-1 flex flex-col w-full">
-        {activeTab !== 'landing' && (
-          <Navbar
-            activeTab={activeTab}
-            setActiveTab={tab => navigateToTab(tab)}
-            openAuthModal={() => setIsAuthOpen(true)}
-          />
-        )}
+        {/* Unified, adaptive Header Navbar */}
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={tab => navigateToTab(tab)}
+          openAuthModal={() => {
+            setIntendedDestination('dashboard');
+            setIsAuthOpen(true);
+          }}
+        />
 
-        <main className="flex-1 w-full px-6 lg:px-8 pt-3 pb-2">
+        <main className={`flex-1 w-full ${activeTab === 'landing' ? 'p-0' : 'px-4 sm:px-6 lg:px-8 pt-3 pb-2'}`}>
           {activeTab === 'landing' && (
-            <LandingPage onStart={() => navigateToTab('dashboard')} />
+            <LandingPage
+              onStart={() => {
+                if (isLoggedIn) {
+                  navigateToTab('dashboard');
+                } else {
+                  setIntendedDestination('dashboard');
+                  setIsAuthOpen(true);
+                }
+              }}
+              onOpenAuth={() => {
+                setIntendedDestination('dashboard');
+                setIsAuthOpen(true);
+              }}
+              onNavigate={tab => navigateToTab(tab)}
+            />
           )}
 
           {activeTab === 'dashboard' && (
@@ -104,8 +172,7 @@ const MainContent: React.FC = () => {
               onBackToModule={() => navigateToTab('module')}
               onGoToRoadmap={() => navigateToTab('roadmap')}
               onGoToSimulator={() => navigateToTab('simulator')}
-
-              />
+            />
           )}
 
           {activeTab === 'simulator' && (
@@ -141,11 +208,20 @@ const MainContent: React.FC = () => {
           )}
         </main>
       </div>
-      
-      <Footer onNavigate={tab => navigateToTab(tab)} />
+
+      {activeTab !== 'landing' && (
+        <Footer onNavigate={tab => navigateToTab(tab)} />
+      )}
 
       <ToastContainer />
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        destination={intendedDestination}
+        onSuccess={() => {
+          navigateToTab(intendedDestination || 'dashboard');
+        }}
+      />
     </div>
   );
 };

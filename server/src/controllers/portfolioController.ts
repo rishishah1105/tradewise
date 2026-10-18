@@ -1,9 +1,17 @@
 import { Request, Response } from 'express';
 import { prisma } from '../prisma.js';
+import { resolveUserId } from '../middleware/authMiddleware.js';
 
-export const getPortfolio = async (_req: Request, res: Response) => {
+export const getPortfolio = async (req: Request, res: Response) => {
   try {
-    const user = await prisma.user.findFirst({
+    const userId = await resolveUserId(req);
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Authentication required. Active session required.' });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
       select: {
         id: true,
         cashBalance: true,
@@ -27,6 +35,12 @@ export const getPortfolio = async (_req: Request, res: Response) => {
 
 export const placeOrder = async (req: Request, res: Response) => {
   try {
+    const userId = await resolveUserId(req);
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Authentication required. Active session required.' });
+      return;
+    }
+
     const { symbol, side, type, shares, limitPrice, currentPrice } = req.body;
 
     if (!symbol || !side || !type || !shares || shares <= 0) {
@@ -34,7 +48,8 @@ export const placeOrder = async (req: Request, res: Response) => {
       return;
     }
 
-    const user = await prisma.user.findFirst({
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
       include: { holdings: true },
     });
 
@@ -154,6 +169,12 @@ export const placeOrder = async (req: Request, res: Response) => {
 
 export const cancelOrder = async (req: Request, res: Response) => {
   try {
+    const userId = await resolveUserId(req);
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Authentication required. Active session required.' });
+      return;
+    }
+
     const { orderId } = req.body;
     if (!orderId) {
       res.status(400).json({ success: false, message: 'Missing orderId' });
@@ -169,6 +190,11 @@ export const cancelOrder = async (req: Request, res: Response) => {
       return;
     }
 
+    if (order.userId !== userId) {
+      res.status(403).json({ success: false, message: 'Forbidden. You do not own this order.' });
+      return;
+    }
+
     await prisma.tradeOrder.update({
       where: { id: orderId },
       data: { status: 'CANCELLED' },
@@ -179,3 +205,4 @@ export const cancelOrder = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Database error' });
   }
 };
+
