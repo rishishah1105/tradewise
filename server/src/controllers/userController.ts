@@ -4,19 +4,33 @@ import { prisma } from '../prisma.js';
 const XP_PER_LEVEL = 300;
 const calculateLevel = (xp: number) => Math.floor(Math.max(0, xp) / XP_PER_LEVEL) + 1;
 
-export const getOrCreateUser = async (_req: Request, res: Response) => {
+export const getOrCreateUser = async (req: Request, res: Response) => {
   try {
-    let user = await prisma.user.findFirst({
-      include: {
-        activityLogs: true,
-        masteredConcepts: true,
-        holdings: true,
-        orders: { where: { status: 'PENDING' } },
-        trades: { orderBy: { timestamp: 'desc' }, take: 50 },
-        badges: true,
-        dailyQuests: true,
-      },
-    });
+    const requestedEmail = typeof req.query.email === 'string' ? req.query.email.trim().toLowerCase() : undefined;
+    let user = requestedEmail
+      ? await prisma.user.findUnique({
+          where: { email: requestedEmail },
+          include: {
+            activityLogs: true,
+            masteredConcepts: true,
+            holdings: true,
+            orders: { where: { status: 'PENDING' } },
+            trades: { orderBy: { timestamp: 'desc' }, take: 50 },
+            badges: true,
+            dailyQuests: true,
+          },
+        })
+      : await prisma.user.findFirst({
+          include: {
+            activityLogs: true,
+            masteredConcepts: true,
+            holdings: true,
+            orders: { where: { status: 'PENDING' } },
+            trades: { orderBy: { timestamp: 'desc' }, take: 50 },
+            badges: true,
+            dailyQuests: true,
+          },
+        });
 
     if (!user) {
       user = await prisma.user.create({
@@ -195,3 +209,110 @@ export const resetAllProgress = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Database error' });
   }
 };
+
+export const loginWithGoogle = async (req: Request, res: Response) => {
+  try {
+    let { email, name, avatarUrl, credential } = req.body;
+
+    // Safely extract JWT payload if raw Google credential was sent
+    if (credential && (!email || !name)) {
+      try {
+        const payloadBase64 = credential.split('.')[1];
+        if (payloadBase64) {
+          const decoded = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf8'));
+          email = email || decoded.email;
+          name = name || decoded.name;
+          avatarUrl = avatarUrl || decoded.picture;
+        }
+      } catch (err) {
+        console.warn('[OAuth] Could not parse Google JWT:', err);
+      }
+    }
+
+    if (!email) {
+      res.status(400).json({ success: false, error: 'Email or username is required' });
+      return;
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: cleanEmail },
+          { handle: cleanEmail },
+        ],
+      },
+      include: {
+        activityLogs: true,
+        masteredConcepts: true,
+        holdings: true,
+        orders: { where: { status: 'PENDING' } },
+        trades: { orderBy: { timestamp: 'desc' }, take: 50 },
+        badges: true,
+        dailyQuests: true,
+      },
+    });
+
+    if (!user) {
+      const emailValue = cleanEmail.includes('@') ? cleanEmail : `${cleanEmail}@tradewise.internal`;
+      const baseHandle = cleanEmail.includes('@') ? cleanEmail.split('@')[0].replace(/[^a-z0-9_]/g, '_') : cleanEmail.replace(/[^a-z0-9_]/g, '_');
+      const uniqueHandle = `${baseHandle}_${Math.floor(100 + Math.random() * 900)}`;
+
+      user = await prisma.user.create({
+        data: {
+          email: emailValue,
+          name: name || baseHandle,
+          handle: uniqueHandle,
+          avatarUrl: avatarUrl || undefined,
+          institution: 'TradeWise Learner',
+          city: 'Mumbai',
+          experienceLevel: 'Beginner',
+          xp: 150,
+          level: 1,
+          streak: 1,
+          cashBalance: 100000.0,
+          startingBalance: 100000.0,
+          badges: {
+            create: [
+              { badgeId: 'first-step', unlockedAt: 'Just now' },
+            ],
+          },
+        },
+        include: {
+          activityLogs: true,
+          masteredConcepts: true,
+          holdings: true,
+          orders: true,
+          trades: true,
+          badges: true,
+          dailyQuests: true,
+        },
+      });
+      console.log(`[OAuth] Created new Google user in Neon DB: ${cleanEmail}`);
+    } else {
+      if (avatarUrl && !user.avatarUrl) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { avatarUrl },
+          include: {
+            activityLogs: true,
+            masteredConcepts: true,
+            holdings: true,
+            orders: { where: { status: 'PENDING' } },
+            trades: { orderBy: { timestamp: 'desc' }, take: 50 },
+            badges: true,
+            dailyQuests: true,
+          },
+        });
+      }
+      console.log(`[OAuth] Google user logged in from Neon DB: ${cleanEmail}`);
+    }
+
+    res.json({ success: true, data: user });
+  } catch (error) {
+    console.error('[OAuth] Google Auth Error:', error);
+    res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Google authentication failed' });
+  }
+};
+

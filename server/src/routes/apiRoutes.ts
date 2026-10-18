@@ -5,6 +5,7 @@ import {
   logActivity,
   claimDailyStreak,
   resetAllProgress,
+  loginWithGoogle,
 } from '../controllers/userController.js';
 import {
   getPortfolio,
@@ -16,7 +17,8 @@ import { getLeaderboard } from '../controllers/leaderboardController.js';
 
 export const apiRouter = Router();
 
-// User & Profile
+// Auth & User Profile
+apiRouter.post('/auth/google', loginWithGoogle);
 apiRouter.get('/user/profile', getOrCreateUser);
 apiRouter.put('/user/profile', updateProfile);
 apiRouter.post('/user/activity', logActivity);
