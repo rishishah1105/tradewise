@@ -32,6 +32,11 @@ export const RoadmapPage: React.FC<{ onSelectConcept: (conceptId: string) => voi
   const masteredCount = masteredConceptIds.length;
   const progressPercent = Math.round((masteredCount / total) * 100);
 
+  const effectiveLevel = Math.floor(user.xp / 300) + 1;
+  const xpStart = (effectiveLevel - 1) * 300;
+  const xpInCurrentLevel = user.xp - xpStart;
+  const xpForNextLevel = 300;
+
   const handleCalculateShortestPath = () => {
     const res = findShortestPathToTopic(targetTopicId);
     setShortestPathResult(res);
@@ -56,10 +61,10 @@ export const RoadmapPage: React.FC<{ onSelectConcept: (conceptId: string) => voi
 
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 rounded-full bg-brand-dark border-none text-brand-light text-xs font-bold">
-              Level {user.level}
+              Level {effectiveLevel}
             </span>
             <span className="px-3 py-1 rounded-full bg-brand-dark border-none text-brand-orange text-xs font-bold">
-              {user.xp} Total XP
+              {xpInCurrentLevel} / {xpForNextLevel} XP
             </span>
           </div>
         </div>
