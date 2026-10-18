@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Lock, CheckCircle2, BookOpen, Award, Compass, ArrowRight, ShieldCheck, Heart } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Lock, CheckCircle2, BookOpen, Award, Compass, ArrowRight, ShieldCheck, Heart, ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { MODULES_DATA } from '../data/modulesData';
 import { findShortestPathToTopic, type PathResult } from '../utils/graphAlgorithms';
@@ -9,6 +9,22 @@ export const RoadmapPage: React.FC<{ onSelectConcept: (conceptId: string) => voi
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [targetTopicId, setTargetTopicId] = useState<string>('portfolio-allocation');
   const [shortestPathResult, setShortestPathResult] = useState<PathResult | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   const categories = ['All', 'Basics', 'Risk & Diversification', 'Instruments', 'Trading Mechanics', 'Portfolio Strategy'];
 
@@ -20,6 +36,8 @@ export const RoadmapPage: React.FC<{ onSelectConcept: (conceptId: string) => voi
     const res = findShortestPathToTopic(targetTopicId);
     setShortestPathResult(res);
   };
+
+  const selectedModule = MODULES_DATA.find(m => m.id === targetTopicId) || MODULES_DATA[0];
 
   return (
     <div className="w-full space-y-8 pb-12">
@@ -65,27 +83,52 @@ export const RoadmapPage: React.FC<{ onSelectConcept: (conceptId: string) => voi
       <div className="bg-brand-card border-none rounded-lg p-6 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <span className="text-xs font-bold text-brand-muted uppercase tracking-wider block flex items-center gap-1">
-              Graph Algorithm (BFS / Dijkstra)
-            </span>
             <h3 className="text-lg font-semibold text-brand-light">Fastest Path to Goal Topic</h3>
             <p className="text-sm text-brand-muted">Calculate the exact minimal set of prerequisites needed to reach any advanced concept.</p>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <select
-              value={targetTopicId}
-              onChange={e => setTargetTopicId(e.target.value)}
-              className="bg-brand-dark border-none rounded-lg px-3 py-2 text-xs text-brand-light font-semibold flex-1 sm:flex-none"
-            >
-              {MODULES_DATA.map(m => (
-                <option key={m.id} value={m.id}>{m.title}</option>
-              ))}
-            </select>
+          <div className="flex items-center gap-2 w-full sm:w-auto relative" ref={dropdownRef}>
+            <div className="relative flex-1 sm:flex-none">
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-full sm:w-64 bg-brand-dark border-none rounded-lg px-3 py-2 text-xs text-brand-light font-semibold flex items-center justify-between gap-2 cursor-pointer hover:bg-brand-dark/80 transition-colors"
+              >
+                <span className="truncate">{selectedModule.title}</span>
+                <ChevronDown className={`w-4 h-4 text-brand-muted shrink-0 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-full sm:w-80 z-50 bg-[#1e2030] border border-white/10 rounded-xl shadow-2xl max-h-64 overflow-y-auto p-1.5 space-y-0.5">
+                  {MODULES_DATA.map((m) => {
+                    const isSelected = m.id === targetTopicId;
+                    const isMastered = masteredConceptIds.includes(m.id);
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => {
+                          setTargetTopicId(m.id);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-xs flex items-center justify-between gap-2.5 transition-colors cursor-pointer ${
+                          isSelected ? 'bg-white/10 text-brand-light font-bold' : 'text-slate-300 hover:bg-white/5 font-medium'
+                        }`}
+                      >
+                        <span className="truncate">{m.title}</span>
+                        {isMastered && (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#10b981] shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             <button
               onClick={handleCalculateShortestPath}
-              className="px-4 py-2 rounded-xl bg-brand-orange text-brand-black hover:scale-105 font-bold text-xs shadow-md shadow-brand-orange/20 transition-all shrink-0"
+              className="px-4 py-2 rounded-xl bg-brand-light text-brand-black hover:scale-105 font-bold text-xs shadow-md shadow-white/10 transition-all shrink-0 cursor-pointer"
             >
               Find Route
             </button>
