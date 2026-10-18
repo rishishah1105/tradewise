@@ -8,6 +8,7 @@ import { api, checkBackendHealth } from '../services/api';
 
 export interface UserProfile {
   name: string;
+  email?: string;
   xp: number;
   level: number;
   streak: number;
@@ -93,7 +94,7 @@ export interface ToastMessage {
   id: string;
   title: string;
   message: string;
-  type: 'xp' | 'trade' | 'badge' | 'streak' | 'info';
+  type?: 'xp' | 'trade' | 'badge' | 'streak' | 'info';
 }
 
 interface AppContextType {
@@ -123,6 +124,11 @@ interface AppContextType {
   backendStatus: 'connected' | 'offline' | 'checking';
   dbStatusText: string;
   recheckBackend: () => Promise<void>;
+
+  // Auth & OAuth State
+  isLoggedIn: boolean;
+  loginWithGoogle: (payload: { email: string; name?: string; avatarUrl?: string; credential?: string }) => Promise<boolean>;
+  logout: () => void;
 
   // User Actions
   completeModuleQuiz: (moduleId: string, scorePercent: number) => void;
@@ -254,6 +260,85 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [backendStatus, setBackendStatus] = useState<'connected' | 'offline' | 'checking'>('checking');
   const [dbStatusText, setDbStatusText] = useState<string>('Checking database...');
 
+  const applyRemoteUserData = (remote: any) => {
+    if (!remote) return;
+    setUser(prev => ({
+      ...prev,
+      name: remote.name || prev.name,
+      email: remote.email || prev.email,
+      handle: remote.handle || prev.handle,
+      bio: remote.bio || prev.bio,
+      institution: remote.institution || prev.institution,
+      city: remote.city || prev.city,
+      experienceLevel: remote.experienceLevel || prev.experienceLevel,
+      avatarUrl: remote.avatarUrl || prev.avatarUrl,
+      avatarColor: remote.avatarColor || prev.avatarColor,
+      xp: remote.xp !== undefined ? remote.xp : prev.xp,
+      level: remote.level !== undefined ? remote.level : prev.level,
+      streak: remote.streak !== undefined ? remote.streak : prev.streak,
+      lastCheckInDate: remote.lastCheckInDate || prev.lastCheckInDate,
+      activityLog: remote.activityLogs?.reduce((acc: Record<string, number>, curr: { dateKey: string; count: number }) => {
+        acc[curr.dateKey] = curr.count;
+        return acc;
+      }, { ...prev.activityLog }) || prev.activityLog,
+      links: {
+        linkedin: remote.linkedin || prev.links?.linkedin,
+        github: remote.github || prev.links?.github,
+        twitter: remote.twitter || prev.links?.twitter,
+      }
+    }));
+
+    if (remote.masteredConcepts?.length) {
+      setMasteredConceptIds(prev => Array.from(new Set([...prev, ...remote.masteredConcepts.map((m: any) => m.conceptId)])));
+      setCompletedQuizScores(prev => {
+        const scores = { ...prev };
+        remote.masteredConcepts.forEach((m: any) => {
+          scores[m.conceptId] = Math.max(scores[m.conceptId] || 0, m.scorePercent);
+        });
+        return scores;
+      });
+    }
+
+    if (remote.cashBalance !== undefined) {
+      setCashBalance(remote.cashBalance);
+    }
+
+    if (remote.holdings?.length) {
+      setHoldings(() => {
+        const hMap: Record<string, PortfolioHolding> = {};
+        remote.holdings.forEach((h: any) => {
+          hMap[h.symbol] = { symbol: h.symbol, shares: h.shares, avgCost: h.avgCost };
+        });
+        return hMap;
+      });
+    }
+
+    if (remote.orders?.length) {
+      setOpenOrders(remote.orders.map((o: any) => ({
+        id: o.id,
+        symbol: o.symbol,
+        side: o.side,
+        type: o.type,
+        shares: o.shares,
+        targetPrice: o.targetPrice,
+        createdAt: new Date(o.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        status: o.status,
+      })));
+    }
+
+    if (remote.trades?.length) {
+      setTradeLog(remote.trades.map((t: any) => ({
+        id: t.id,
+        symbol: t.symbol,
+        side: t.side,
+        shares: t.shares,
+        price: t.price,
+        total: t.total,
+        timestamp: new Date(t.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      })));
+    }
+  };
+
   const checkConnection = async () => {
     try {
       const health = await checkBackendHealth();
@@ -263,82 +348,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         // Synchronize remote PostgreSQL data if available
         try {
-          const remote = await api.getUserProfile();
+          const savedEmail = localStorage.getItem('tradewise_logged_in_email');
+          const remote = await api.getUserProfile(savedEmail || undefined);
           if (remote) {
-            setUser(prev => ({
-              ...prev,
-              name: remote.name || prev.name,
-              handle: remote.handle || prev.handle,
-              bio: remote.bio || prev.bio,
-              institution: remote.institution || prev.institution,
-              city: remote.city || prev.city,
-              experienceLevel: remote.experienceLevel || prev.experienceLevel,
-              avatarUrl: remote.avatarUrl || prev.avatarUrl,
-              avatarColor: remote.avatarColor || prev.avatarColor,
-              xp: remote.xp !== undefined ? remote.xp : prev.xp,
-              level: remote.level !== undefined ? remote.level : prev.level,
-              streak: remote.streak !== undefined ? remote.streak : prev.streak,
-              lastCheckInDate: remote.lastCheckInDate || prev.lastCheckInDate,
-              activityLog: remote.activityLogs?.reduce((acc: Record<string, number>, curr: { dateKey: string; count: number }) => {
-                acc[curr.dateKey] = curr.count;
-                return acc;
-              }, { ...prev.activityLog }) || prev.activityLog,
-              links: {
-                linkedin: remote.linkedin || prev.links?.linkedin,
-                github: remote.github || prev.links?.github,
-                twitter: remote.twitter || prev.links?.twitter,
-              }
-            }));
-
-            if (remote.masteredConcepts?.length) {
-              setMasteredConceptIds(prev => Array.from(new Set([...prev, ...remote.masteredConcepts.map((m: any) => m.conceptId)])));
-              setCompletedQuizScores(prev => {
-                const scores = { ...prev };
-                remote.masteredConcepts.forEach((m: any) => {
-                  scores[m.conceptId] = Math.max(scores[m.conceptId] || 0, m.scorePercent);
-                });
-                return scores;
-              });
-            }
-
-            if (remote.cashBalance !== undefined) {
-              setCashBalance(remote.cashBalance);
-            }
-
-            if (remote.holdings?.length) {
-              setHoldings(prev => {
-                const hMap: Record<string, PortfolioHolding> = { ...prev };
-                remote.holdings.forEach((h: any) => {
-                  hMap[h.symbol] = { symbol: h.symbol, shares: h.shares, avgCost: h.avgCost };
-                });
-                return hMap;
-              });
-            }
-
-            if (remote.orders?.length) {
-              setOpenOrders(remote.orders.map((o: any) => ({
-                id: o.id,
-                symbol: o.symbol,
-                side: o.side,
-                type: o.type,
-                shares: o.shares,
-                targetPrice: o.targetPrice,
-                createdAt: new Date(o.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-                status: o.status,
-              })));
-            }
-
-            if (remote.trades?.length) {
-              setTradeLog(remote.trades.map((t: any) => ({
-                id: t.id,
-                symbol: t.symbol,
-                side: t.side,
-                shares: t.shares,
-                price: t.price,
-                total: t.total,
-                timestamp: new Date(t.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-              })));
-            }
+            applyRemoteUserData(remote);
           }
         } catch {
           // Fallback to local storage silently
@@ -352,6 +365,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setDbStatusText('Offline (Local Storage Mode)');
     }
   };
+
+  const loginWithGoogle = async (payload: { email: string; name?: string; avatarUrl?: string; credential?: string }): Promise<boolean> => {
+    try {
+      const remote = await api.loginWithGoogle(payload);
+      if (remote) {
+        applyRemoteUserData(remote);
+        localStorage.setItem('tradewise_logged_in_email', remote.email || payload.email);
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+        addToast('Signed In Successfully!', `Welcome back, ${remote.name || remote.email}!`, 'info');
+        return true;
+      }
+    } catch (err) {
+      console.error('[OAuth] Login failed:', err);
+    }
+    return false;
+  };
+
+  const logout = () => {
+    localStorage.removeItem('tradewise_logged_in_email');
+    setUser(INITIAL_USER);
+    addToast('Signed Out', 'You have been switched to Guest Mode.', 'info');
+  };
+
+  const isLoggedIn = Boolean(user.email || localStorage.getItem('tradewise_logged_in_email'));
 
   useEffect(() => {
     checkConnection();
@@ -1094,7 +1135,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       updateProfile,
       backendStatus,
       dbStatusText,
-      recheckBackend: checkConnection
+      recheckBackend: checkConnection,
+      isLoggedIn,
+      loginWithGoogle,
+      logout
     }}>
       {children}
     </AppContext.Provider>

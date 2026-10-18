@@ -33,10 +33,29 @@ export const checkBackendHealth = async (): Promise<{ isOnline: boolean; dbStatu
 };
 
 export const api = {
-  // User Profile
-  async getUserProfile() {
+  // Auth & OAuth
+  async loginWithGoogle(payload: { email: string; name?: string; avatarUrl?: string; credential?: string }) {
     try {
-      const res = await fetch(`${API_BASE_URL}/user/profile`);
+      const res = await fetch(`${API_BASE_URL}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch (err) {
+      console.warn('[API] loginWithGoogle error:', err);
+    }
+    return null;
+  },
+
+  // User Profile
+  async getUserProfile(email?: string) {
+    try {
+      const url = email ? `${API_BASE_URL}/user/profile?email=${encodeURIComponent(email)}` : `${API_BASE_URL}/user/profile`;
+      const res = await fetch(url);
       if (res.ok) {
         const json = await res.json();
         return json.data;
