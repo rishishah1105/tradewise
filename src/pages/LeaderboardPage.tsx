@@ -189,7 +189,7 @@ export const LeaderboardPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full space-y-4 pb-16">
+    <div className="w-full space-y-4 pb-2">
       {/* Header Banner */}
       <div className="bg-brand-card border-none rounded-lg p-6 sm:p-8 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-2">

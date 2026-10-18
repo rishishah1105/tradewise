@@ -142,7 +142,7 @@ export const QuizPage: React.FC<{
   const isCorrect = selectedOption === currentQuestion.correctAnswer;
 
   return (
-    <div className="w-full space-y-6 pb-16">
+    <div className="w-full space-y-6 pb-2">
       {/* Quiz Header Bar */}
       <div className="flex items-center justify-between">
         <button

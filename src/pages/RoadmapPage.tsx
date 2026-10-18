@@ -46,7 +46,7 @@ export const RoadmapPage: React.FC<{ onSelectConcept: (conceptId: string) => voi
   const selectedModule = MODULES_DATA.find(m => m.id === targetTopicId) || MODULES_DATA[0];
 
   return (
-    <div className="w-full space-y-3 pb-12">
+    <div className="w-full space-y-3 pb-2">
       {/* Top Cards: Fastest Path (3 cols) & Roadmap Mastery (2 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 items-stretch">
         {/* Fastest-Path-to-Topic Tool */}

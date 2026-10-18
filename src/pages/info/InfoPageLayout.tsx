@@ -13,7 +13,7 @@ export const InfoPageLayout: React.FC<InfoPageLayoutProps> = ({
   children
 }) => {
   return (
-    <div className="w-full pb-16">
+    <div className="w-full pb-2">
       <div className="bg-brand-card rounded-lg p-6 sm:p-10 shadow-xl space-y-6">
         <div className="border-b border-brand-dark pb-4 space-y-1">
           <h1 className="text-3xl font-bold text-brand-light tracking-tight">{title}</h1>

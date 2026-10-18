@@ -103,7 +103,7 @@ export const Dashboard: React.FC<{
   ];
 
   return (
-    <div className="w-full space-y-4 pb-12">
+    <div className="w-full space-y-4 pb-2">
       {/* Top Banner Greeting */}
       <div className="bg-brand-card border-none rounded-lg p-6 sm:p-8 shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 w-80 h-80 bg-brand-orange/5 rounded-full blur-3xl pointer-events-none" />

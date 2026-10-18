@@ -1,7 +1,6 @@
 import React from 'react';
 import { CandlestickChart } from 'lucide-react';
 import { SITE } from '../config/site';
-import { DatabaseStatusBadge } from './DatabaseStatusBadge';
 
 export interface FooterProps {
   onNavigate: (tab: string) => void;
@@ -11,7 +10,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full bg-brand-black border-t border-brand-card mt-12">
+    <footer className="w-full relative mt-6 bg-gradient-to-b from-[#0e1422] via-[#090d16] to-[#070a10] border-t border-white/5">
+      {/* Seamless glowing accent line at the top of the footer */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-brand-orange/25 to-transparent pointer-events-none" />
       <div className="w-full px-6 lg:px-8 py-8">
         {/* Top 4-Column Area */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -144,12 +145,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
         {/* Bottom Bar */}
         <div className="border-t border-brand-card mt-8 pt-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <p className="text-xs text-brand-muted text-center md:text-left shrink-0">
-              © {currentYear} {SITE.name}. All rights reserved.
-            </p>
-            <DatabaseStatusBadge />
-          </div>
+          <p className="text-xs text-brand-muted text-center md:text-left shrink-0">
+            © {currentYear} {SITE.name}. All rights reserved.
+          </p>
           <p className="text-brand-muted text-xs text-center md:text-right leading-relaxed max-w-2xl">
             TradeWise is an educational simulation platform. All content is for learning purposes only and does not constitute financial advice. Paper trading results do not reflect real market outcomes. Please consult a SEBI registered financial advisor before making any real investment decisions.
           </p>

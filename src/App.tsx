@@ -64,8 +64,8 @@ const MainContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F17] text-slate-100 font-sans flex flex-col justify-between">
-      <div>
+    <div className="min-h-screen bg-[#0B0F17] text-slate-100 font-sans flex flex-col">
+      <div className="flex-1 flex flex-col w-full">
         {activeTab !== 'landing' && (
           <Navbar
             activeTab={activeTab}
@@ -74,7 +74,7 @@ const MainContent: React.FC = () => {
           />
         )}
 
-        <main className="w-full px-6 lg:px-8 pt-3">
+        <main className="flex-1 w-full px-6 lg:px-8 pt-3 pb-2">
           {activeTab === 'landing' && (
             <LandingPage onStart={() => navigateToTab('dashboard')} />
           )}
