@@ -11,6 +11,12 @@ import { SimulatorPage } from './pages/SimulatorPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AuthModal } from './pages/AuthModal';
+import { Footer } from './components/Footer';
+import { AboutPage } from './pages/info/AboutPage';
+import { ContactPage } from './pages/info/ContactPage';
+import { PrivacyPolicyPage } from './pages/info/PrivacyPolicyPage';
+import { TermsPage } from './pages/info/TermsPage';
+import { DisclaimerPage } from './pages/info/DisclaimerPage';
 
 const VALID_TABS = ['landing','dashboard','roadmap','module','quiz','simulator','leaderboard','profile','about','contact','privacy','terms','disclaimer'] as const;
 const sanitizeTab = (t: string) => (VALID_TABS as readonly string[]).includes(t) ? t : 'dashboard';
@@ -113,16 +119,30 @@ const MainContent: React.FC = () => {
           {activeTab === 'profile' && (
             <ProfilePage />
           )}
+
+          {activeTab === 'about' && (
+            <AboutPage onNavigate={tab => navigateToTab(tab)} />
+          )}
+
+          {activeTab === 'contact' && (
+            <ContactPage />
+          )}
+
+          {activeTab === 'privacy' && (
+            <PrivacyPolicyPage />
+          )}
+
+          {activeTab === 'terms' && (
+            <TermsPage />
+          )}
+
+          {activeTab === 'disclaimer' && (
+            <DisclaimerPage />
+          )}
         </main>
       </div>
       
-      <footer className="w-full bg-brand-black border-t border-brand-card py-4 mt-8">
-        <div className="w-full px-6 lg:px-8">
-          <p className="text-brand-muted text-xs text-center leading-relaxed">
-            TradeWise is an educational simulation platform. All content is for learning purposes only and does not constitute financial advice. Paper trading results do not reflect real market outcomes. Please consult a SEBI registered financial advisor before making any real investment decisions.
-          </p>
-        </div>
-      </footer>
+      <Footer onNavigate={tab => navigateToTab(tab)} />
 
       <ToastContainer />
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
