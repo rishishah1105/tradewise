@@ -1,0 +1,135 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                    String            @id @default(uuid())
+  email                 String?           @unique
+  name                  String            @default("Rishi")
+  handle                String?           @unique
+  bio                   String?           @db.VarChar(160)
+  institution           String?           @default("TradeWise Learner")
+  city                  String?
+  experienceLevel       String?           @default("Beginner") // Beginner | Intermediate | Advanced
+  avatarUrl             String?           @db.Text
+  avatarColor           String?           @default("#475569")
+  linkedin              String?
+  github                String?
+  twitter               String?
+  xp                    Int               @default(150)
+  level                 Int               @default(1)
+  streak                Int               @default(3)
+  lastCheckInDate       String?
+  streakFreezeAvailable Boolean           @default(true)
+  joinedAt              String?
+  cashBalance           Float             @default(100000.0)
+  startingBalance       Float             @default(100000.0)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  activityLogs          ActivityLog[]
+  masteredConcepts      MasteredConcept[]
+  holdings              PortfolioHolding[]
+  orders                TradeOrder[]
+  trades                TradeLog[]
+  badges                UserBadge[]
+  dailyQuests           DailyQuestState[]
+
+  @@map("users")
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateKey   String   // YYYY-MM-DD
+  count     Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, dateKey])
+  @@map("activity_logs")
+}
+
+model MasteredConcept {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conceptId    String
+  scorePercent Int      @default(100)
+  completedAt  DateTime @default(now())
+
+  @@unique([userId, conceptId])
+  @@map("mastered_concepts")
+}
+
+model PortfolioHolding {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol    String
+  shares    Int      @default(0)
+  avgCost   Float    @default(0.0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, symbol])
+  @@map("portfolio_holdings")
+}
+
+model TradeOrder {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol      String
+  side        String   // BUY | SELL
+  type        String   // MARKET | LIMIT
+  shares      Int
+  targetPrice Float
+  status      String   @default("PENDING") // PENDING | FILLED | CANCELLED
+  createdAt   DateTime @default(now())
+
+  @@map("trade_orders")
+}
+
+model TradeLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol    String
+  side      String   // BUY | SELL
+  shares    Int
+  price     Float
+  total     Float
+  timestamp DateTime @default(now())
+
+  @@map("trade_logs")
+}
+
+model UserBadge {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId    String
+  unlockedAt String
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model DailyQuestState {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateKey   String
+  questId   String
+  progress  Int      @default(0)
+  completed Boolean  @default(false)
+
+  @@unique([userId, dateKey, questId])
+  @@map("daily_quest_states")
+}

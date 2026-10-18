@@ -1,6 +1,7 @@
 import React from 'react';
 import { CandlestickChart } from 'lucide-react';
 import { SITE } from '../config/site';
+import { DatabaseStatusBadge } from './DatabaseStatusBadge';
 
 export interface FooterProps {
   onNavigate: (tab: string) => void;
@@ -143,9 +144,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
         {/* Bottom Bar */}
         <div className="border-t border-brand-card mt-8 pt-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-brand-muted text-center md:text-left shrink-0">
-            © {currentYear} {SITE.name}. All rights reserved.
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <p className="text-xs text-brand-muted text-center md:text-left shrink-0">
+              © {currentYear} {SITE.name}. All rights reserved.
+            </p>
+            <DatabaseStatusBadge />
+          </div>
           <p className="text-brand-muted text-xs text-center md:text-right leading-relaxed max-w-2xl">
             TradeWise is an educational simulation platform. All content is for learning purposes only and does not constitute financial advice. Paper trading results do not reflect real market outcomes. Please consult a SEBI registered financial advisor before making any real investment decisions.
           </p>

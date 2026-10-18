@@ -4,6 +4,7 @@ import { MODULES_DATA } from '../data/modulesData';
 import { INITIAL_STOCKS, type StockInstrument, generateOrderBook, generateMockStock } from '../data/stocksData';
 import { getLevelInfo } from '../utils/level';
 import { toDateKey } from '../utils/dateKeys';
+import { api, checkBackendHealth } from '../services/api';
 
 export interface UserProfile {
   name: string;
@@ -118,6 +119,11 @@ interface AppContextType {
   formatMoney: (amount: number) => string;
   isConceptUnlocked: (moduleId: string) => boolean;
   
+  // Database & Backend State
+  backendStatus: 'connected' | 'offline' | 'checking';
+  dbStatusText: string;
+  recheckBackend: () => Promise<void>;
+
   // User Actions
   completeModuleQuiz: (moduleId: string, scorePercent: number) => void;
   addMockStock: (symbol: string, name: string) => Promise<void>;
@@ -244,9 +250,116 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   });
 
 
+  // Backend & PostgreSQL Database State
+  const [backendStatus, setBackendStatus] = useState<'connected' | 'offline' | 'checking'>('checking');
+  const [dbStatusText, setDbStatusText] = useState<string>('Checking database...');
+
+  const checkConnection = async () => {
+    try {
+      const health = await checkBackendHealth();
+      if (health.isOnline) {
+        setBackendStatus('connected');
+        setDbStatusText(health.dbStatus);
+
+        // Synchronize remote PostgreSQL data if available
+        try {
+          const remote = await api.getUserProfile();
+          if (remote) {
+            setUser(prev => ({
+              ...prev,
+              name: remote.name || prev.name,
+              handle: remote.handle || prev.handle,
+              bio: remote.bio || prev.bio,
+              institution: remote.institution || prev.institution,
+              city: remote.city || prev.city,
+              experienceLevel: remote.experienceLevel || prev.experienceLevel,
+              avatarUrl: remote.avatarUrl || prev.avatarUrl,
+              avatarColor: remote.avatarColor || prev.avatarColor,
+              xp: remote.xp !== undefined ? remote.xp : prev.xp,
+              level: remote.level !== undefined ? remote.level : prev.level,
+              streak: remote.streak !== undefined ? remote.streak : prev.streak,
+              lastCheckInDate: remote.lastCheckInDate || prev.lastCheckInDate,
+              activityLog: remote.activityLogs?.reduce((acc: Record<string, number>, curr: { dateKey: string; count: number }) => {
+                acc[curr.dateKey] = curr.count;
+                return acc;
+              }, { ...prev.activityLog }) || prev.activityLog,
+              links: {
+                linkedin: remote.linkedin || prev.links?.linkedin,
+                github: remote.github || prev.links?.github,
+                twitter: remote.twitter || prev.links?.twitter,
+              }
+            }));
+
+            if (remote.masteredConcepts?.length) {
+              setMasteredConceptIds(prev => Array.from(new Set([...prev, ...remote.masteredConcepts.map((m: any) => m.conceptId)])));
+              setCompletedQuizScores(prev => {
+                const scores = { ...prev };
+                remote.masteredConcepts.forEach((m: any) => {
+                  scores[m.conceptId] = Math.max(scores[m.conceptId] || 0, m.scorePercent);
+                });
+                return scores;
+              });
+            }
+
+            if (remote.cashBalance !== undefined) {
+              setCashBalance(remote.cashBalance);
+            }
+
+            if (remote.holdings?.length) {
+              setHoldings(prev => {
+                const hMap: Record<string, PortfolioHolding> = { ...prev };
+                remote.holdings.forEach((h: any) => {
+                  hMap[h.symbol] = { symbol: h.symbol, shares: h.shares, avgCost: h.avgCost };
+                });
+                return hMap;
+              });
+            }
+
+            if (remote.orders?.length) {
+              setOpenOrders(remote.orders.map((o: any) => ({
+                id: o.id,
+                symbol: o.symbol,
+                side: o.side,
+                type: o.type,
+                shares: o.shares,
+                targetPrice: o.targetPrice,
+                createdAt: new Date(o.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+                status: o.status,
+              })));
+            }
+
+            if (remote.trades?.length) {
+              setTradeLog(remote.trades.map((t: any) => ({
+                id: t.id,
+                symbol: t.symbol,
+                side: t.side,
+                shares: t.shares,
+                price: t.price,
+                total: t.total,
+                timestamp: new Date(t.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+              })));
+            }
+          }
+        } catch {
+          // Fallback to local storage silently
+        }
+      } else {
+        setBackendStatus('offline');
+        setDbStatusText('Offline (Local Storage Mode)');
+      }
+    } catch {
+      setBackendStatus('offline');
+      setDbStatusText('Offline (Local Storage Mode)');
+    }
+  };
+
+  useEffect(() => {
+    checkConnection();
+  }, []);
+
   const logActivity = () => {
+    const today = toDateKey();
     setUser(prev => {
-      const today = toDateKey();
       const currentScore = prev.activityLog[today] || 0;
       const newScore = Math.min(4, currentScore + 1);
       if (currentScore === newScore) return prev;
@@ -258,6 +371,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
       };
     });
+
+    // Background sync to PostgreSQL
+    api.logActivity(today).catch(() => {});
   };
 
   const addMockStock = async (symbol: string, name: string) => {
@@ -418,6 +534,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (updates.links !== undefined) allowed.links = updates.links;
       return { ...prev, ...allowed };
     });
+
+    // Background sync to PostgreSQL
+    api.updateProfile({
+      name: updates.name,
+      handle: updates.handle,
+      bio: updates.bio,
+      institution: updates.institution,
+      city: updates.city,
+      experienceLevel: updates.experienceLevel,
+      avatarUrl: updates.avatarUrl,
+      avatarColor: updates.avatarColor,
+      linkedin: updates.links?.linkedin,
+      github: updates.links?.github,
+      twitter: updates.links?.twitter,
+    }).catch(() => {});
   };
 
   useEffect(() => {
@@ -666,6 +797,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (allBasicsDone) {
         unlockBadge('basics-master');
       }
+
+      // Background sync to PostgreSQL
+      api.completeQuiz(moduleId, scorePercent, mod.xpReward).catch(() => {});
     }
   };
 
@@ -739,6 +873,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         checkDiversifierBadge();
         updateQuestProgress('quest-2', 1);
 
+        // Background sync to PostgreSQL
+        api.placeOrder({
+          symbol,
+          side: 'BUY',
+          type: 'MARKET',
+          shares,
+          currentPrice: stock.price,
+        }).catch(() => {});
+
         return { success: true, message: `Successfully bought ${shares} shares of ${symbol}!` };
       } else {
         setCashBalance(prev => prev - totalCost);
@@ -755,6 +898,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setOpenOrders(prev => [order, ...prev]);
         addToast(`Limit Order Placed`, `Buy Limit for ${shares} ${symbol} @ ${formatMoney(limitPrice || stock.price)}`, 'info');
         updateQuestProgress('quest-2', 1);
+
+        // Background sync to PostgreSQL
+        api.placeOrder({
+          symbol,
+          side: 'BUY',
+          type: 'LIMIT',
+          shares,
+          limitPrice: limitPrice || stock.price,
+          currentPrice: stock.price,
+        }).catch(() => {});
+
         return { success: true, message: `Limit order placed for ${shares} shares of ${symbol}!` };
       }
     } else {
@@ -794,6 +948,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         unlockBadge('first-trade');
         updateQuestProgress('quest-2', 1);
 
+        // Background sync to PostgreSQL
+        api.placeOrder({
+          symbol,
+          side: 'SELL',
+          type: 'MARKET',
+          shares,
+          currentPrice: stock.price,
+        }).catch(() => {});
+
         return { success: true, message: `Successfully sold ${shares} shares of ${symbol}!` };
       } else {
         setHoldings(prev => {
@@ -823,6 +986,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setOpenOrders(prev => [order, ...prev]);
         addToast(`Limit Order Placed`, `Sell Limit for ${shares} ${symbol} @ ${formatMoney(limitPrice || stock.price)}`, 'info');
         updateQuestProgress('quest-2', 1);
+
+        // Background sync to PostgreSQL
+        api.placeOrder({
+          symbol,
+          side,
+          type,
+          shares,
+          limitPrice,
+          currentPrice: stock.price,
+        }).catch(() => {});
+
         return { success: true, message: `Limit order placed for ${shares} shares of ${symbol}!` };
       }
     }
@@ -847,6 +1021,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setOpenOrders(prev => prev.filter(o => o.id !== orderId));
     addToast('Order Cancelled', `Limit order for ${order.symbol} was cancelled.`, 'info');
+
+    // Background sync to PostgreSQL
+    api.cancelOrder(orderId).catch(() => {});
   };
 
   const claimDailyStreak = () => {
@@ -861,6 +1038,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
         return { ...prev, streak: newStreak, xp: newXP, level: getLevelInfo(newXP).level, lastCheckInDate: today };
       });
+
+      // Background sync to PostgreSQL
+      api.claimStreak(today).catch(() => {});
     }
   };
 
@@ -876,6 +1056,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setBadges(INITIAL_BADGES);
     setQuests(INITIAL_QUESTS);
     addToast('Progress Reset', 'All user data and portfolio has been reset.', 'info');
+
+    // Background sync to PostgreSQL
+    api.resetProgress().catch(() => {});
   };
 
   return (
@@ -893,10 +1076,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       tradeLog,
       badges,
       quests,
-        addMockStock,
-        dailyQuestState,
-        activeQuestConfig,
-        updateDailyQuestProgress,
+      addMockStock,
+      dailyQuestState,
+      activeQuestConfig,
+      updateDailyQuestProgress,
       toasts,
       formatMoney,
       isConceptUnlocked,
@@ -908,7 +1091,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       resetAllProgress,
       removeToast,
       addToast,
-      updateProfile
+      updateProfile,
+      backendStatus,
+      dbStatusText,
+      recheckBackend: checkConnection
     }}>
       {children}
     </AppContext.Provider>

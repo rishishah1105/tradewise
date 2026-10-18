@@ -7,6 +7,7 @@ import { EditProfileModal } from '../components/EditProfileModal';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
 import { BadgeMedallion } from '../components/BadgeMedallion';
 import { BadgeModal } from '../components/BadgeModal';
+import { DatabaseStatusBadge } from '../components/DatabaseStatusBadge';
 
 export const ProfilePage: React.FC = () => {
   const { user, badges, tradeLog, holdings, resetAllProgress, formatMoney, addToast } = useApp();
@@ -114,14 +115,17 @@ export const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Edit Profile Button at top right */}
-          <button
-            onClick={() => setIsEditModalOpen(true)}
-            className="self-center sm:self-start px-3 py-1.5 rounded-lg bg-brand-dark text-brand-light hover:bg-brand-dark/70 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-white/5 shrink-0"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-            <span>Edit Profile</span>
-          </button>
+          {/* Database Status & Edit Profile Buttons at top right */}
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 self-center sm:self-start shrink-0">
+            <DatabaseStatusBadge />
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="px-3 py-1.5 rounded-lg bg-brand-dark text-brand-light hover:bg-brand-dark/70 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-white/5"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              <span>Edit Profile</span>
+            </button>
+          </div>
         </div>
       </div>
 
