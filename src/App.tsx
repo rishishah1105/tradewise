@@ -9,32 +9,36 @@ import { StudyModulePage } from './pages/StudyModulePage';
 import { QuizPage } from './pages/QuizPage';
 import { SimulatorPage } from './pages/SimulatorPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
-import { DevEnginePage } from './pages/DevEnginePage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AuthModal } from './pages/AuthModal';
+
+const VALID_TABS = ['landing','dashboard','roadmap','module','quiz','simulator','leaderboard','profile','about','contact','privacy','terms','disclaimer'] as const;
+const sanitizeTab = (t: string) => (VALID_TABS as readonly string[]).includes(t) ? t : 'dashboard';
 
 const MainContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>(() => {
     const hash = window.location.hash.replace('#', '');
-    return hash || 'dashboard';
+    return sanitizeTab(hash);
   });
   const [currentConceptId, setCurrentConceptId] = useState<string>('what-is-a-stock');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const navigateToTab = (tab: string, pushHistory = true) => {
-    setActiveTab(tab);
+    const cleanTab = sanitizeTab(tab);
+    setActiveTab(cleanTab);
     if (pushHistory) {
-      window.history.pushState({ tab }, '', '#' + tab);
+      window.history.pushState({ tab: cleanTab }, '', '#' + cleanTab);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   useEffect(() => {
-    const initialTab = window.location.hash.replace('#', '') || 'dashboard';
+    const initialTab = sanitizeTab(window.location.hash.replace('#', ''));
     window.history.replaceState({ tab: initialTab }, '', '#' + initialTab);
 
     const handlePopState = (event: PopStateEvent) => {
-      const targetTab = event.state?.tab || window.location.hash.replace('#', '') || 'dashboard';
+      const rawTab = event.state?.tab || window.location.hash.replace('#', '');
+      const targetTab = sanitizeTab(rawTab);
       setActiveTab(targetTab);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -104,10 +108,6 @@ const MainContent: React.FC = () => {
 
           {activeTab === 'leaderboard' && (
             <LeaderboardPage />
-          )}
-
-          {activeTab === 'dev-engine' && (
-            <DevEnginePage />
           )}
 
           {activeTab === 'profile' && (

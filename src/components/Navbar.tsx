@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Compass, CandlestickChart, Trophy, User, Flame, Award, Cpu, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Compass, CandlestickChart, Trophy, User, Flame, Award, UserCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export interface NavbarProps {
@@ -18,7 +18,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
     { id: 'roadmap', label: 'Roadmap', icon: Compass },
     { id: 'simulator', label: 'Simulator', icon: CandlestickChart },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
-    { id: 'dev-engine', label: 'Dev Engine', icon: Cpu },
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
