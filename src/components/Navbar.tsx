@@ -1,6 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, Compass, CandlestickChart, Trophy, User, Flame, Award, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Compass, CandlestickChart, Trophy, User, Flame, UserCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { getLevelInfo } from '../utils/level';
 
 export interface NavbarProps {
   activeTab: string;
@@ -10,8 +11,7 @@ export interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   const { user, claimDailyStreak } = useApp();
-
-  const currentLevelProgress = Math.min(100, Math.round(((user.xp % 300) / 300) * 100));
+  const levelInfo = getLevelInfo(user.xp);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -72,13 +72,50 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               <span>{user.streak}d</span>
             </button>
 
-            {/* XP Pill */}
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-brand-card border border-brand-card text-brand-light rounded-lg text-xs font-bold">
-              <Award className="w-4 h-4 text-brand-muted" />
-              <div className="flex flex-col text-[11px] leading-tight">
-                <span>{user.xp} XP</span>
-                <div className="w-12 h-1 bg-brand-dark rounded-full overflow-hidden mt-0.5">
-                  <div style={{ width: `${currentLevelProgress}%` }} className="h-full bg-brand-orange" />
+            {/* XP Pill with Hover & Focus Popover */}
+            <div className="relative group hidden lg:block">
+              <div
+                tabIndex={0}
+                aria-label={`Level ${levelInfo.level}, ${levelInfo.xpIntoLevel} of ${levelInfo.xpForLevel} XP. ${levelInfo.xpToNext} XP to level ${levelInfo.nextLevel}`}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-brand-card border border-white/5 text-brand-light focus:outline-none focus:ring-1 focus:ring-white/20 cursor-default"
+              >
+                <span className="text-[10px] font-extrabold bg-brand-dark px-1.5 py-0.5 rounded-md text-brand-light">
+                  Lv {levelInfo.level}
+                </span>
+                <div className="w-16 h-1.5 bg-brand-dark rounded-full overflow-hidden">
+                  <div
+                    style={{ width: `${levelInfo.progressPercent}%` }}
+                    className="h-full bg-brand-orange transition-all duration-500"
+                  />
+                </div>
+                <span className="text-[11px] font-mono text-brand-muted">
+                  {levelInfo.xpIntoLevel}/{levelInfo.xpForLevel}
+                </span>
+              </div>
+
+              {/* Hover and focus popover */}
+              <div className="absolute right-0 top-full pt-2 w-60 z-50 hidden group-hover:block group-focus-within:block">
+                <div className="bg-[#1e2030] border border-white/10 rounded-xl shadow-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-brand-light">Level {levelInfo.level}</span>
+                    <span className="text-brand-muted font-normal">Level {levelInfo.nextLevel}</span>
+                  </div>
+                  <div className="w-full h-2 bg-brand-dark rounded-full overflow-hidden">
+                    <div
+                      style={{ width: `${levelInfo.progressPercent}%` }}
+                      className="h-full bg-brand-orange transition-all duration-500"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-brand-muted">
+                    <span className="font-mono">{levelInfo.xpIntoLevel} / {levelInfo.xpForLevel} XP</span>
+                    <span>{levelInfo.progressPercent}%</span>
+                  </div>
+                  <div className="text-xs text-brand-light font-semibold pt-1 border-t border-white/5">
+                    {levelInfo.xpToNext} XP to Level {levelInfo.nextLevel}
+                  </div>
+                  <div className="text-[11px] text-brand-muted">
+                    Total XP earned: {levelInfo.totalXp}
+                  </div>
                 </div>
               </div>
             </div>
@@ -86,13 +123,13 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             {/* User Avatar */}
             <button
               onClick={() => setActiveTab('profile')}
-              className="relative p-0.5 rounded-full bg-brand-card hover:scale-105 transition-transform"
+              className="relative p-0.5 rounded-full bg-brand-card hover:scale-105 transition-transform cursor-pointer"
             >
               <div className="w-8 h-8 rounded-full bg-brand-dark flex items-center justify-center text-brand-muted">
                 <UserCircle className="w-6 h-6" />
               </div>
               <span className="absolute -bottom-1 -right-1 bg-brand-orange text-brand-black text-[9px] font-extrabold px-1 rounded-full border border-brand-black">
-                L{user.level}
+                L{levelInfo.level}
               </span>
             </button>
           </div>
