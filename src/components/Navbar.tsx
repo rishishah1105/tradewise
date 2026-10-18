@@ -44,14 +44,16 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
           <nav className="hidden md:flex items-center gap-1 bg-brand-dark p-1 rounded-lg border border-brand-dark">
             {navItems.map(item => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
+              const isActive = item.id === 'roadmap'
+                ? (activeTab === 'roadmap' || activeTab === 'module' || activeTab === 'quiz')
+                : activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-brand-orange text-brand-black shadow-md shadow-brand-orange/20'
+                      ? 'bg-brand-orange text-brand-black shadow-md shadow-brand-orange/20 font-bold'
                       : 'text-brand-muted hover:text-brand-light hover:bg-brand-card'
                   }`}
                 >
@@ -147,7 +149,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-brand-black/95 backdrop-blur-lg border-t border-brand-black px-2 py-2 flex items-center justify-around">
         {navItems.map(item => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id;
+          const isActive = item.id === 'roadmap'
+            ? (activeTab === 'roadmap' || activeTab === 'module' || activeTab === 'quiz')
+            : activeTab === item.id;
           return (
             <button
               key={item.id}

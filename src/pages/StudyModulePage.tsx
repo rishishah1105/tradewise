@@ -78,19 +78,16 @@ export const StudyModulePage: React.FC<{
       {/* Chapter Navigation Controls */}
       <div className="flex items-center justify-between gap-3 border-b border-brand-dark pb-2">
         <button
+          type="button"
           onClick={() => setIsSidebarOpen(prev => !prev)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-card hover:bg-brand-dark text-brand-light text-xs font-semibold cursor-pointer border border-slate-800 transition-colors shrink-0"
+          title={isSidebarOpen ? "Hide chapters sidebar" : "Show chapters sidebar"}
+          aria-label={isSidebarOpen ? "Hide chapters sidebar" : "Show chapters sidebar"}
+          className="p-2 rounded-lg bg-brand-card hover:bg-brand-dark text-brand-light text-xs font-semibold cursor-pointer border border-slate-800 hover:border-slate-700 transition-all shrink-0 flex items-center justify-center shadow-sm"
         >
           {isSidebarOpen ? (
-            <>
-              <PanelLeftClose className="w-4 h-4 text-brand-orange" />
-              <span>Hide Sidebar</span>
-            </>
+            <PanelLeftClose className="w-4 h-4 text-brand-orange" />
           ) : (
-            <>
-              <PanelLeft className="w-4 h-4 text-brand-orange" />
-              <span>Show Chapters Sidebar</span>
-            </>
+            <PanelLeft className="w-4 h-4 text-brand-orange" />
           )}
         </button>
 
