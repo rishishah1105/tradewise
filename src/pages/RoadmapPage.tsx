@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Lock, CheckCircle2, BookOpen, Award, Compass, ArrowRight, ShieldCheck, Heart, ChevronDown } from 'lucide-react';
+import { Lock, CheckCircle2, Award, PlayCircle, ArrowRight, ShieldCheck, Heart, ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { MODULES_DATA } from '../data/modulesData';
 import { findShortestPathToTopic, type PathResult } from '../utils/graphAlgorithms';
@@ -206,22 +206,22 @@ export const RoadmapPage: React.FC<{ onSelectConcept: (conceptId: string) => voi
                   let cardStyle = 'bg-brand-card border-brand-muted opacity-70 grayscale cursor-not-allowed';
                   let statusBadge = (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-dark text-brand-muted text-xs font-bold border border-brand-muted">
-                      <Lock className="w-3.5 h-3.5 text-brand-muted" /> 🔒 Locked
+                      <Lock className="w-3.5 h-3.5 text-brand-muted" /> Locked
                     </span>
                   );
 
                   if (isMastered) {
-                    cardStyle = 'bg-brand-card border-brand-orange border-2 shadow-xl cursor-pointer relative';
+                    cardStyle = 'bg-brand-card border-[#10b981] border-2 shadow-xl cursor-pointer relative';
                     statusBadge = (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-dark text-brand-muted text-xs font-bold border border-brand-muted">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-brand-orange" /> Mastered
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-dark text-[#10b981] text-xs font-bold border border-[#10b981]/30">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#10b981]" /> Mastered
                       </span>
                     );
                   } else if (isUnlocked) {
                     cardStyle = 'bg-brand-card border-brand-orange border-2 cursor-pointer';
                     statusBadge = (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-dark text-brand-orange text-xs font-black">
-                        <Compass className="w-3.5 h-3.5 text-brand-orange" /> 🧭 Ready to Start
+                        <PlayCircle className="w-3.5 h-3.5 text-brand-orange" /> Start
                       </span>
                     );
                   }
@@ -236,15 +236,12 @@ export const RoadmapPage: React.FC<{ onSelectConcept: (conceptId: string) => voi
                     >
                       <div className="space-y-3">
                         {isMastered && (
-                          <div className="absolute -top-2 -right-2 w-6 h-6 bg-brand-orange rounded-full flex items-center justify-center shadow-md z-10">
+                          <div className="absolute -top-2 -right-2 w-6 h-6 bg-[#10b981] rounded-full flex items-center justify-center shadow-md z-10">
                             <CheckCircle2 className="w-4 h-4 text-white" />
                           </div>
                         )}
                         <div className="flex items-center justify-between">
                           {statusBadge}
-                          <span className="text-[11px] font-medium flex items-center gap-1 text-brand-muted">
-                            <BookOpen className="w-3.5 h-3.5 text-brand-muted" /> {mod.estimatedMinutes}m
-                          </span>
                         </div>
 
                         <div>
