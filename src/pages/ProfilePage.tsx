@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Flame, TrendingUp, RefreshCw, Pencil } from 'lucide-react';
+import { Flame, TrendingUp, RefreshCw, Pencil, AlertTriangle, X } from 'lucide-react';
 import { useApp, type Badge } from '../context/AppContext';
 import { fromDateKey } from '../utils/dateKeys';
 import { UserAvatar } from '../components/UserAvatar';
@@ -9,9 +9,11 @@ import { BadgeMedallion } from '../components/BadgeMedallion';
 import { BadgeModal } from '../components/BadgeModal';
 
 export const ProfilePage: React.FC = () => {
-  const { user, badges, tradeLog, holdings, resetAllProgress, formatMoney } = useApp();
+  const { user, badges, tradeLog, holdings, resetAllProgress, formatMoney, addToast } = useApp();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetInput, setResetInput] = useState('');
 
   const unlockedCount = badges.filter(b => b.unlocked).length;
 
@@ -187,19 +189,95 @@ export const ProfilePage: React.FC = () => {
       </div>
 
       {/* Reset Account Settings */}
-      <div className="bg-brand-card border-none rounded-lg p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-brand-card border border-red-500/20 rounded-lg p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h4 className="text-lg font-semibold text-brand-light">Reset Account & Portfolio Data</h4>
+          <h4 className="text-lg font-semibold text-brand-light flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+            <span>Reset Account & Portfolio Data</span>
+          </h4>
           <p className="text-sm text-brand-muted">Restart your learning path and restore virtual cash back to starting balance.</p>
         </div>
         <button
-          onClick={resetAllProgress}
-          className="px-5 py-2.5 rounded-lg bg-brand-dark hover:bg-brand-dark/80 text-brand-light text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+          onClick={() => {
+            setIsResetModalOpen(true);
+            setResetInput('');
+          }}
+          className="px-5 py-2.5 rounded-lg bg-red-500/10 hover:bg-red-600 border border-red-500/30 text-red-400 hover:text-white text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer shadow-sm shadow-red-500/10"
         >
           <RefreshCw className="w-4 h-4" />
           <span>Reset All Progress</span>
         </button>
       </div>
+
+      {/* Confirmation Modal to type 'reset' */}
+      {isResetModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-[#131926] border border-red-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5 text-left relative animate-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-brand-light">Reset All Progress?</h3>
+                  <p className="text-xs text-red-400 font-medium">This action cannot be undone.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsResetModalOpen(false)}
+                className="text-brand-muted hover:text-brand-light p-1 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-brand-muted leading-relaxed">
+              All your study modules, quiz scores, unlocked badges, trading logs, and simulator portfolio will be permanently reset to factory defaults.
+            </p>
+
+            <div className="space-y-2">
+              <label className="text-xs text-brand-light font-semibold block">
+                To confirm, type <span className="font-mono text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20 font-bold">reset</span> below:
+              </label>
+              <input
+                type="text"
+                autoFocus
+                value={resetInput}
+                onChange={(e) => setResetInput(e.target.value)}
+                placeholder="Type 'reset'"
+                className="w-full bg-[#1A2232] border border-slate-700 focus:border-red-500 rounded-lg px-3 py-2 text-sm text-brand-light font-mono outline-none transition-colors placeholder:text-slate-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsResetModalOpen(false)}
+                className="px-4 py-2 rounded-lg bg-brand-dark hover:bg-brand-dark/80 text-brand-light text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={resetInput.trim().toLowerCase() !== 'reset'}
+                onClick={() => {
+                  resetAllProgress();
+                  setIsResetModalOpen(false);
+                  addToast('Progress Reset', 'Your account and portfolio have been restored to defaults.', 'info');
+                }}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  resetInput.trim().toLowerCase() === 'reset'
+                    ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/30 cursor-pointer'
+                    : 'bg-red-600/30 text-red-300/40 cursor-not-allowed border border-red-500/20'
+                }`}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Confirm Reset</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Profile Modal */}
       <EditProfileModal

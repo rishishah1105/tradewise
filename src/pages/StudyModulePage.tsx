@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, BookOpen, Award, CheckCircle2, ArrowRight, Sparkles, Lightbulb, PieChart } from 'lucide-react';
+import { ArrowLeft, BookOpen, Award, CheckCircle2, ArrowRight, Sparkles, Lightbulb, PieChart, PanelLeft, PanelLeftClose, X } from 'lucide-react';
 import { MODULES_DATA } from '../data/modulesData';
 import { VisualAidRenderer } from '../components/VisualAids';
 import { useApp } from '../context/AppContext';
@@ -11,6 +11,7 @@ export const StudyModulePage: React.FC<{
 }> = ({ conceptId, onBackToRoadmap, onStartQuiz }) => {
   const { masteredConceptIds, holdings, stocks, formatMoney } = useApp();
   const [activeChapterIndex, setActiveChapterIndex] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const module = MODULES_DATA.find(m => m.id === conceptId) || MODULES_DATA[0];
   const isMastered = masteredConceptIds.includes(module.id);
@@ -74,68 +75,137 @@ export const StudyModulePage: React.FC<{
         </div>
       </div>
 
-      {/* Multi-Chapter Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-brand-dark pb-2 overflow-x-auto scrollbar-none">
-        {module.chapters.map((ch, idx) => (
-          <button
-            key={ch.id}
-            onClick={() => setActiveChapterIndex(idx)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
-              activeChapterIndex === idx
-                ? 'bg-brand-orange text-brand-black shadow-md shadow-brand-orange/30'
-                : 'bg-brand-card text-brand-muted hover:bg-brand-dark border-none'
-            }`}
-          >
-            <span>{idx + 1}. {ch.title.split(':')[1] || ch.title}</span>
-          </button>
-        ))}
+      {/* Chapter Navigation Controls */}
+      <div className="flex items-center justify-between gap-3 border-b border-brand-dark pb-2">
+        <button
+          onClick={() => setIsSidebarOpen(prev => !prev)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-card hover:bg-brand-dark text-brand-light text-xs font-semibold cursor-pointer border border-slate-800 transition-colors shrink-0"
+        >
+          {isSidebarOpen ? (
+            <>
+              <PanelLeftClose className="w-4 h-4 text-brand-orange" />
+              <span>Hide Sidebar</span>
+            </>
+          ) : (
+            <>
+              <PanelLeft className="w-4 h-4 text-brand-orange" />
+              <span>Show Chapters Sidebar</span>
+            </>
+          )}
+        </button>
+
+        {/* Quick Horizontal Chapter Tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-1">
+          {module.chapters.map((ch, idx) => (
+            <button
+              key={ch.id}
+              onClick={() => setActiveChapterIndex(idx)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                activeChapterIndex === idx
+                  ? 'bg-brand-orange text-brand-black shadow-md shadow-brand-orange/20'
+                  : 'bg-brand-card text-brand-muted hover:bg-brand-dark border-none'
+              }`}
+            >
+              <span>{idx + 1}. {ch.title.split(':')[1]?.trim() || ch.title}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Active Chapter Deep-Dive Content */}
-      <div className="bg-brand-dark border border-brand-dark rounded-lg p-6 sm:p-8 space-y-6">
-        <div className="flex items-center justify-between border-b border-brand-card pb-3">
-          <h3 className="text-lg font-semibold text-brand-light flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-brand-orange" />
-            {activeChapter.title}
-          </h3>
-          <span className="text-xs text-brand-muted font-mono">Chapter {activeChapterIndex + 1} of {module.chapters.length}</span>
+      {/* Main Chapter Layout: Closeable Sidebar + Content */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
+        {/* Closeable Chapters Sidebar */}
+        {isSidebarOpen && (
+          <aside className="w-full lg:w-80 shrink-0 bg-brand-card border border-slate-800 rounded-xl p-4 space-y-3 shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <div className="flex items-center gap-2 text-xs font-bold text-brand-light">
+                <BookOpen className="w-4 h-4 text-brand-orange" />
+                <span>Chapters ({module.chapters.length})</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(false)}
+                title="Close sidebar"
+                className="p-1 rounded-md text-brand-muted hover:text-brand-light hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-1.5 max-h-[70vh] overflow-y-auto pr-1">
+              {module.chapters.map((ch, idx) => {
+                const isActive = activeChapterIndex === idx;
+                return (
+                  <button
+                    key={ch.id}
+                    onClick={() => setActiveChapterIndex(idx)}
+                    className={`w-full text-left p-2.5 rounded-lg text-xs transition-all flex items-start gap-2.5 cursor-pointer ${
+                      isActive
+                        ? 'bg-brand-orange text-brand-black font-bold shadow-md shadow-brand-orange/20'
+                        : 'text-slate-300 hover:bg-brand-dark hover:text-white font-medium'
+                    }`}
+                  >
+                    <span className={`w-5 h-5 rounded-md text-[10px] flex items-center justify-center shrink-0 font-mono ${
+                      isActive ? 'bg-black/20 text-brand-black font-extrabold' : 'bg-brand-dark text-slate-400'
+                    }`}>
+                      {idx + 1}
+                    </span>
+                    <span className="leading-snug">
+                      {ch.title.split(':')[1]?.trim() || ch.title}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+        )}
+
+        {/* Active Chapter Deep-Dive Content */}
+        <div className="flex-1 w-full bg-brand-dark border border-brand-dark rounded-xl p-6 sm:p-8 space-y-6 shadow-xl">
+          <div className="flex items-center justify-between border-b border-brand-card pb-3">
+            <h3 className="text-lg font-semibold text-brand-light flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-brand-orange" />
+              {activeChapter.title}
+            </h3>
+            <span className="text-xs text-brand-muted font-mono">Chapter {activeChapterIndex + 1} of {module.chapters.length}</span>
+          </div>
+
+          <div className="text-sm text-brand-light leading-relaxed whitespace-pre-line">
+            {activeChapter.content}
+          </div>
+
+          {activeChapter.example && (
+            <div className="p-4 bg-brand-card border-none rounded-lg space-y-1 text-xs">
+              <strong className="text-brand-light font-bold font-mono flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
+                <Lightbulb className="w-4 h-4 text-brand-orange" /> Real-World Example
+              </strong>
+              <p className="text-brand-muted leading-relaxed">{activeChapter.example}</p>
+            </div>
+          )}
+
+          {activeChapter.keyPoint && (
+            <div className="p-3 bg-brand-card border-none rounded-lg text-xs text-brand-light font-medium flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-brand-orange shrink-0" />
+              <span><strong>Key Takeaway:</strong> {activeChapter.keyPoint}</span>
+            </div>
+          )}
+
+          {activeChapter.keyTakeaways && activeChapter.keyTakeaways.length > 0 && (
+            <div className="p-4 bg-brand-card border-none rounded-lg space-y-2 text-xs">
+              <strong className="text-brand-light font-bold font-mono flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
+                <CheckCircle2 className="w-4 h-4 text-brand-orange" /> Chapter Takeaways
+              </strong>
+              <ul className="space-y-1.5 text-brand-muted leading-relaxed">
+                {activeChapter.keyTakeaways.map((takeaway, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="text-brand-orange font-bold select-none">•</span>
+                    <span>{takeaway}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
-
-        <div className="text-sm text-brand-light leading-relaxed whitespace-pre-line">
-          {activeChapter.content}
-        </div>
-
-        {activeChapter.example && (
-          <div className="p-4 bg-brand-card border-none rounded-lg space-y-1 text-xs">
-            <strong className="text-brand-light font-bold font-mono flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
-              <Lightbulb className="w-4 h-4 text-brand-orange" /> Real-World Example
-            </strong>
-            <p className="text-brand-muted leading-relaxed">{activeChapter.example}</p>
-          </div>
-        )}
-
-        {activeChapter.keyPoint && (
-          <div className="p-3 bg-brand-card border-none rounded-lg text-xs text-brand-light font-medium flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-brand-orange shrink-0" />
-            <span><strong>Key Takeaway:</strong> {activeChapter.keyPoint}</span>
-          </div>
-        )}
-
-        {activeChapter.keyTakeaways && activeChapter.keyTakeaways.length > 0 && (
-          <div className="p-4 bg-brand-card border-none rounded-lg space-y-2 text-xs">
-            <strong className="text-brand-light font-bold font-mono flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
-              <CheckCircle2 className="w-4 h-4 text-brand-orange" /> Chapter Takeaways
-            </strong>
-            <ul className="space-y-1.5 text-brand-muted leading-relaxed">
-              {activeChapter.keyTakeaways.map((takeaway, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <span className="text-brand-orange font-bold select-none">•</span>
-                  <span>{takeaway}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </div>
 
       {/* Apply Lesson to Your Live Paper Portfolio (Specific to Diversification module) */}
