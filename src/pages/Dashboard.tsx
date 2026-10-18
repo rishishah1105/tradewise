@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Compass, CandlestickChart, Award, Flame, ArrowRight, CheckCircle2, TrendingUp, BookOpen, Target, Calendar } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { MODULES_DATA } from '../data/modulesData';
+import { getLevelInfo } from '../utils/level';
+import { toDateKey } from '../utils/dateKeys';
 
 export const Dashboard: React.FC<{
   onSelectConcept: (conceptId: string) => void;
@@ -31,7 +33,7 @@ export const Dashboard: React.FC<{
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
   const currentMonthName = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-  const todayDateStr = currentDate.toISOString().split('T')[0];
+  const todayDateStr = toDateKey(currentDate);
 
   const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayOfMonthRaw = new Date(currentYear, currentMonth, 1).getDay(); // 0 is Sunday
@@ -57,7 +59,7 @@ export const Dashboard: React.FC<{
   const displayPercent = masteryPercent === 0 ? 0 : Math.max(masteryPercent, minPercent);
   const circumference = 2 * Math.PI * 58;
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = toDateKey();
   const isStreakClaimed = user.lastCheckInDate === today;
 
   const nextRecommended = MODULES_DATA.find(m => !masteredConceptIds.includes(m.id)) || MODULES_DATA[0];
@@ -134,7 +136,7 @@ export const Dashboard: React.FC<{
               Ready to grow your financial IQ today?
             </h1>
             <p className="text-sm sm:text-sm text-brand-muted max-w-xl">
-              You are on Level {user.level} with {user.xp} XP. Master Indian market modules or trade NSE stocks to climb the leaderboard!
+              You are on Level {getLevelInfo(user.xp).level} with {user.xp} XP. Master Indian market modules or trade NSE stocks to climb the leaderboard!
             </p>
           </div>
 

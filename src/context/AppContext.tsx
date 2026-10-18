@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, type ReactNode }
 import confetti from 'canvas-confetti';
 import { MODULES_DATA } from '../data/modulesData';
 import { INITIAL_STOCKS, type StockInstrument, generateOrderBook, generateMockStock } from '../data/stocksData';
+import { getLevelInfo } from '../utils/level';
+import { toDateKey } from '../utils/dateKeys';
 
 export interface UserProfile {
   name: string;
@@ -124,7 +126,7 @@ const INITIAL_USER: UserProfile = {
   xp: 150,
   level: 1,
   streak: 3,
-  lastCheckInDate: new Date().toISOString().split('T')[0],
+  lastCheckInDate: toDateKey(),
   currency: 'INR',
   streakFreezeAvailable: true,
   activityLog: {}
@@ -179,7 +181,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return Math.floor(diff / 86400000);
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = toDateKey();
   const activeQuestConfig = DAILY_QUEST_POOL[getDayOfYear() % DAILY_QUEST_POOL.length];
 
   const [dailyQuestState, setDailyQuestState] = useState<DailyQuestState>(() => {
@@ -205,7 +207,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setDailyQuestState(prev => {
       const newProgress = Math.min(activeQuestConfig.target, prev.progress + amount);
       if (newProgress >= activeQuestConfig.target && !prev.completed) {
-        setUser(u => ({ ...u, xp: u.xp + activeQuestConfig.reward }));
+        setUser(u => {
+          const newXP = u.xp + activeQuestConfig.reward;
+          return { ...u, xp: newXP, level: getLevelInfo(newXP).level };
+        });
         addToast('Daily Quest Completed! 🎁', `+${activeQuestConfig.reward} XP for: ${activeQuestConfig.title}`, 'xp');
         confetti({ particleCount: 60, spread: 50, origin: { y: 0.6 } });
         return { ...prev, progress: newProgress, completed: true };
@@ -214,15 +219,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
-const [user, setUser] = useState<UserProfile>(() => {
+  const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('tradewise_user');
-    return saved ? JSON.parse(saved) : INITIAL_USER;
+    const merged = saved ? { ...INITIAL_USER, ...JSON.parse(saved) } : INITIAL_USER;
+    return {
+      ...merged,
+      level: getLevelInfo(merged.xp).level
+    };
   });
 
 
   const logActivity = () => {
     setUser(prev => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = toDateKey();
       const currentScore = prev.activityLog[today] || 0;
       const newScore = Math.min(4, currentScore + 1);
       if (currentScore === newScore) return prev;
@@ -590,7 +599,7 @@ const [user, setUser] = useState<UserProfile>(() => {
       const earnedXP = mod.xpReward + (scorePercent === 100 ? 50 : 0);
       setUser(prev => {
         const newXP = prev.xp + earnedXP;
-        const newLevel = Math.floor(newXP / 300) + 1;
+        const newLevel = getLevelInfo(newXP).level;
         if (newLevel > prev.level) {
           addToast(`LEVEL UP! 🌟`, `You reached Level ${newLevel}!`, 'xp');
         }
@@ -638,7 +647,10 @@ const [user, setUser] = useState<UserProfile>(() => {
     const q = quests.find(item => item.id === questId);
     if (q && q.current >= q.target && !q.completed) {
       setQuests(prev => prev.map(item => item.id === questId ? { ...item, completed: true } : item));
-      setUser(prev => ({ ...prev, xp: prev.xp + q.xpReward }));
+      setUser(prev => {
+        const newXP = prev.xp + q.xpReward;
+        return { ...prev, xp: newXP, level: getLevelInfo(newXP).level };
+      });
       addToast('Daily Quest Claimed! 🎯', `+${q.xpReward} XP for completing: ${q.title}`, 'xp');
       confetti({ particleCount: 60, spread: 50, origin: { y: 0.6 } });
     }
@@ -802,7 +814,7 @@ const [user, setUser] = useState<UserProfile>(() => {
   };
 
   const claimDailyStreak = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toDateKey();
     if (user.lastCheckInDate !== today) {
       setUser(prev => {
         const newStreak = prev.streak + 1;
@@ -811,7 +823,7 @@ const [user, setUser] = useState<UserProfile>(() => {
         if (newStreak >= 5) {
           unlockBadge('streak-5');
         }
-        return { ...prev, streak: newStreak, xp: newXP, lastCheckInDate: today };
+        return { ...prev, streak: newStreak, xp: newXP, level: getLevelInfo(newXP).level, lastCheckInDate: today };
       });
     }
   };

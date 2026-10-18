@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Trophy, Flame, Crown, CandlestickChart, Award } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { getLevelInfo } from '../utils/level';
 
 export interface LeaderboardEntry {
   rank: number;
@@ -38,7 +39,7 @@ export const LeaderboardPage: React.FC = () => {
     xp: user.xp,
     streak: user.streak,
     portfolioReturn: 6.2,
-    level: user.level,
+    level: getLevelInfo(user.xp).level,
     isCurrentUser: true
   };
 
