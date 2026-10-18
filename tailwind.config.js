@@ -22,6 +22,7 @@ export default {
         'bounce-subtle': 'bounce 2s infinite',
         'float-xp': 'floatXP 1.5s ease-out forwards',
         'glow-pulse': 'glowPulse 2s infinite alternate',
+        'badge-spin': 'badgeSpin 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
       },
       keyframes: {
         floatXP: {
@@ -32,7 +33,11 @@ export default {
         glowPulse: {
           '0%': { boxShadow: '0 0 5px rgba(255, 174, 0, 0.4)' },
           '100%': { boxShadow: '0 0 20px rgba(255, 174, 0, 0.8)' },
-        }
+        },
+        badgeSpin: {
+          '0%': { transform: 'rotateY(0deg)' },
+          '100%': { transform: 'rotateY(1080deg)' },
+        },
       }
     },
   },

@@ -1,28 +1,17 @@
 import React, { useState } from 'react';
-import { Award, Flame, Zap, ShieldCheck, TrendingUp, Target, RefreshCw, CheckCircle2, Lock, PieChart, DollarSign, BookOpen, Pencil } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { Flame, TrendingUp, RefreshCw, Pencil } from 'lucide-react';
+import { useApp, type Badge } from '../context/AppContext';
 import { fromDateKey } from '../utils/dateKeys';
 import { UserAvatar } from '../components/UserAvatar';
 import { EditProfileModal } from '../components/EditProfileModal';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
+import { BadgeMedallion } from '../components/BadgeMedallion';
+import { BadgeModal } from '../components/BadgeModal';
 
 export const ProfilePage: React.FC = () => {
   const { user, badges, tradeLog, holdings, resetAllProgress, formatMoney } = useApp();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  const getBadgeIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'BookOpen': return <BookOpen className="w-6 h-6 text-brand-light" />;
-      case 'Award': return <Award className="w-6 h-6 text-brand-orange" />;
-      case 'TrendingUp': return <TrendingUp className="w-6 h-6 text-brand-light" />;
-      case 'PieChart': return <PieChart className="w-6 h-6 text-brand-light" />;
-      case 'Zap': return <Zap className="w-6 h-6 text-brand-orange" />;
-      case 'Target': return <Target className="w-6 h-6 text-brand-light" />;
-      case 'ShieldCheck': return <ShieldCheck className="w-6 h-6 text-brand-light" />;
-      case 'DollarSign': return <DollarSign className="w-6 h-6 text-brand-light" />;
-      default: return <Award className="w-6 h-6 text-brand-light" />;
-    }
-  };
+  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
 
   const unlockedCount = badges.filter(b => b.unlocked).length;
 
@@ -137,50 +126,36 @@ export const ProfilePage: React.FC = () => {
       {/* Activity Heatmap */}
       <ActivityHeatmap />
 
-      {/* Badge Case Showcase */}
+      {/* Achievement Badges Showcase */}
       <div className="bg-brand-card border-none rounded-lg p-6 shadow-xl space-y-6">
         <div className="flex items-center justify-between border-b border-brand-dark pb-3">
           <div>
-            <h3 className="text-lg font-semibold text-brand-light flex items-center gap-2">
-              <Award className="w-5 h-5 text-brand-orange" /> Achievement Badge Case
+            <h3 className="text-lg font-semibold text-brand-light">
+              Achievement Badges
             </h3>
             <p className="text-sm text-brand-muted">Unlock milestone badges through learning modules and paper trades.</p>
           </div>
-          <span className="text-xs font-bold text-brand-light">{unlockedCount} / {badges.length} Mastered</span>
+          <span className="text-xs font-bold text-brand-light">{unlockedCount} / {badges.length}</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
           {badges.map(badge => (
-            <div
+            <button
               key={badge.id}
-              className={`p-5 rounded-2xl border-2 flex flex-col justify-between space-y-3 transition-all ${
-                badge.unlocked
-                  ? 'bg-brand-card border-brand-orange shadow-lg shadow-brand-orange/20 glow-orange'
-                  : 'bg-brand-card border-brand-muted opacity-60 grayscale'
-              }`}
+              onClick={() => setSelectedBadge(badge)}
+              aria-label={`${badge.title} badge: ${badge.unlocked ? `Unlocked ${badge.unlockedAt || 'Recently'}` : 'Locked'}`}
+              className="flex flex-col items-center text-center p-3 rounded-xl hover:bg-brand-dark/40 transition-all hover:scale-105 cursor-pointer group space-y-2 border border-transparent hover:border-white/5"
             >
-              <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-lg bg-brand-dark flex items-center justify-center">
-                  {getBadgeIcon(badge.iconName)}
-                </div>
-                {badge.unlocked ? (
-                  <CheckCircle2 className="w-5 h-5 text-brand-orange" />
-                ) : (
-                  <Lock className="w-4 h-4 text-brand-muted" />
-                )}
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-lg text-brand-light">{badge.title}</h4>
-                <p className="text-[11px] text-brand-muted mt-1 leading-relaxed">{badge.description}</p>
-              </div>
-
-              <div className="pt-2 border-t border-brand-dark">
-                <span className="text-[10px] font-bold text-brand-muted">
-                  {badge.unlocked ? `Unlocked ${badge.unlockedAt || 'Recently'}` : 'Locked Milestone'}
+              <BadgeMedallion badge={badge} size={88} />
+              <div className="w-full">
+                <span className="text-xs font-semibold text-brand-light block truncate">
+                  {badge.title}
+                </span>
+                <span className="text-[10px] text-brand-muted block truncate mt-0.5">
+                  {badge.unlocked ? (badge.unlockedAt || 'Unlocked') : 'Locked'}
                 </span>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -230,6 +205,13 @@ export const ProfilePage: React.FC = () => {
       <EditProfileModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
+      />
+
+      {/* Badge Detail & 3D Spin Modal */}
+      <BadgeModal
+        badge={selectedBadge}
+        isOpen={Boolean(selectedBadge)}
+        onClose={() => setSelectedBadge(null)}
       />
     </div>
   );
