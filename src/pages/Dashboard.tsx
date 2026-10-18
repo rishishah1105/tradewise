@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Compass, CandlestickChart, Award, Flame, ArrowRight, CheckCircle2, TrendingUp, BookOpen, Target, Calendar } from 'lucide-react';
+import { Compass, CandlestickChart, Award, Flame, ArrowRight, CheckCircle2, TrendingUp, BookOpen, Target, Calendar, RotateCw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { MODULES_DATA } from '../data/modulesData';
 import { getLevelInfo } from '../utils/level';
 import { toDateKey } from '../utils/dateKeys';
+import { LeetCodeDailyProgressCalendar } from '../components/LeetCodeDailyProgressCalendar';
 
 export const Dashboard: React.FC<{
   onSelectConcept: (conceptId: string) => void;
@@ -12,7 +13,15 @@ export const Dashboard: React.FC<{
   const { user, masteredConceptIds, cashBalance, holdings, stocks, dailyQuestState, activeQuestConfig, formatMoney, claimDailyStreak } = useApp();
 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [flippedQuestIds, setFlippedQuestIds] = useState<Record<string, boolean>>({});
   const calendarRef = useRef<HTMLDivElement>(null);
+
+  const toggleQuestFlip = (questId: string) => {
+    setFlippedQuestIds(prev => ({
+      ...prev,
+      [questId]: !prev[questId]
+    }));
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -27,31 +36,6 @@ export const Dashboard: React.FC<{
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isCalendarOpen]);
-
-  // Calendar calculations for current month
-  const currentDate = new Date();
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth();
-  const currentMonthName = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-  const todayDateStr = toDateKey(currentDate);
-
-  const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const firstDayOfMonthRaw = new Date(currentYear, currentMonth, 1).getDay(); // 0 is Sunday
-  const startDayOffset = (firstDayOfMonthRaw + 6) % 7; // Monday = 0, ..., Sunday = 6
-
-  const calendarDays = [];
-  for (let i = 0; i < startDayOffset; i++) {
-    calendarDays.push(null);
-  }
-  for (let day = 1; day <= daysInCurrentMonth; day++) {
-    const dayStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const activityCount = user.activityLog?.[dayStr] || 0;
-    const isToday = dayStr === todayDateStr;
-    const hasActivity = activityCount > 0 || (isToday && user.lastCheckInDate === todayDateStr);
-    calendarDays.push({ day, dayStr, hasActivity, isToday });
-  }
-
-  const activeDaysThisMonth = calendarDays.filter(d => d && d.hasActivity).length;
 
   const totalConcepts = MODULES_DATA.length;
   const masteryPercent = (masteredConceptIds.length / totalConcepts) * 100;
@@ -172,71 +156,10 @@ export const Dashboard: React.FC<{
               </button>
             </div>
 
-            {/* Monthly Calendar Popover */}
+            {/* Monthly Calendar Popover (LeetCode style) */}
             {isCalendarOpen && (
-              <div className="absolute right-0 top-full mt-2 z-50 bg-brand-card border border-brand-dark rounded-xl p-4 shadow-2xl w-72 animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center justify-between border-b border-brand-dark pb-2 mb-3">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-brand-orange" />
-                    <span className="text-xs font-bold text-brand-light">{currentMonthName}</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-brand-orange bg-brand-dark px-2 py-0.5 rounded-full">
-                    {activeDaysThisMonth} active {activeDaysThisMonth === 1 ? 'day' : 'days'}
-                  </span>
-                </div>
-
-                {/* Weekday headers: Mon - Sun */}
-                <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-brand-muted mb-2">
-                  <span>Mo</span>
-                  <span>Tu</span>
-                  <span>We</span>
-                  <span>Th</span>
-                  <span>Fr</span>
-                  <span>Sa</span>
-                  <span>Su</span>
-                </div>
-
-                {/* Day grid */}
-                <div className="grid grid-cols-7 gap-1.5 justify-items-center">
-                  {calendarDays.map((item, idx) => {
-                    if (!item) {
-                      return <div key={`empty-${idx}`} className="w-7 h-7" />;
-                    }
-                    return (
-                      <div
-                        key={item.dayStr}
-                        title={`${item.dayStr}: ${item.hasActivity ? 'Activity logged' : 'No activity'}`}
-                        className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] transition-all relative ${
-                          item.hasActivity
-                            ? 'bg-brand-orange text-brand-black font-extrabold shadow-sm shadow-brand-orange/40'
-                            : 'bg-brand-dark text-slate-400 border border-slate-600/40'
-                        } ${
-                          item.isToday
-                            ? 'ring-2 ring-brand-light ring-offset-1 ring-offset-brand-card font-bold'
-                            : ''
-                        }`}
-                      >
-                        {item.day}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Legend */}
-                <div className="flex items-center justify-between pt-3 mt-3 border-t border-brand-dark text-[9px] text-brand-muted">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-brand-orange inline-block" />
-                    <span>Active</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-brand-dark border border-slate-600/50 inline-block" />
-                    <span>No Activity</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full ring-2 ring-brand-light inline-block" />
-                    <span>Today</span>
-                  </div>
-                </div>
+              <div className="absolute right-0 top-full mt-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <LeetCodeDailyProgressCalendar onClaimStreak={claimDailyStreak} />
               </div>
             )}
           </div>
@@ -357,24 +280,103 @@ export const Dashboard: React.FC<{
           {questTiles.map(quest => {
             const Icon = quest.icon;
             const progressPercent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
+            const isFlipped = Boolean(flippedQuestIds[quest.id]);
 
+            // Case 1: Completed Quest with Interactive 3D Flip
+            if (quest.isCompleted) {
+              return (
+                <div
+                  key={quest.id}
+                  onClick={() => toggleQuestFlip(quest.id)}
+                  title="Click to flip card"
+                  className="perspective-1000 min-h-[220px] cursor-pointer select-none group"
+                >
+                  <div
+                    className={`relative w-full h-full transition-transform duration-500 transform-style-3d rounded-lg ${
+                      isFlipped ? 'rotate-y-180' : ''
+                    }`}
+                  >
+                    {/* Front Face: Celebratory Completed State */}
+                    <div className="absolute inset-0 backface-hidden bg-brand-card border border-emerald-500/30 rounded-lg p-5 shadow-lg flex flex-col justify-between overflow-hidden">
+                      <div className="flex items-center justify-between text-[11px] font-bold">
+                        <span className="flex items-center gap-1.5 text-emerald-400 uppercase tracking-wider">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Completed
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px]">
+                          +{quest.reward} XP
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col items-center justify-center my-auto py-2 text-center">
+                        <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-2 shadow-sm group-hover:scale-110 transition-transform">
+                          <CheckCircle2 className="w-6 h-6" />
+                        </div>
+                        <h4 className="font-bold text-sm text-brand-light line-clamp-1">
+                          {quest.title}
+                        </h4>
+                        <span className="text-xs text-brand-muted mt-1">Goal achieved · 100% complete</span>
+                      </div>
+
+                      <div className="pt-2 border-t border-brand-dark/50 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-emerald-400/90 group-hover:text-emerald-300 transition-colors">
+                        <RotateCw className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
+                        <span>Click to see quest details</span>
+                      </div>
+                    </div>
+
+                    {/* Back Face: Original Quest Details (Revealed on flip) */}
+                    <div className="absolute inset-0 backface-hidden rotate-y-180 bg-brand-card border border-brand-dark rounded-lg p-5 shadow-lg flex flex-col justify-between overflow-hidden">
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="w-9 h-9 rounded-lg bg-brand-dark flex items-center justify-center text-brand-orange">
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                              Completed ✓
+                            </span>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-dark text-brand-orange border border-brand-orange/20">
+                              +{quest.reward} XP
+                            </span>
+                          </div>
+                        </div>
+
+                        <h4 className="font-bold text-sm text-brand-light leading-snug mb-1">
+                          {quest.title}
+                        </h4>
+                        <p className="text-xs text-brand-muted leading-relaxed mb-2">
+                          {quest.description}
+                        </p>
+                      </div>
+
+                      <div className="space-y-1.5 pt-2 border-t border-brand-dark/50">
+                        <div className="flex items-center justify-between text-[11px] font-mono">
+                          <span className="text-emerald-400 font-semibold">
+                            Goal reached ({quest.progress}/{quest.target})
+                          </span>
+                          <span className="flex items-center gap-1 text-slate-400 text-[10px] hover:text-white">
+                            <RotateCw className="w-3 h-3" /> Flip back
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full bg-brand-dark rounded-full overflow-hidden">
+                          <div style={{ width: '100%' }} className="h-full rounded-full bg-emerald-500" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // Case 2: Active or Upcoming Quest (Normal tile)
             return (
               <div
                 key={quest.id}
-                className={`bg-brand-card rounded-lg p-5 shadow-lg flex flex-col justify-between relative overflow-hidden transition-all ${
+                className={`bg-brand-card rounded-lg p-5 shadow-lg flex flex-col justify-between relative overflow-hidden transition-all min-h-[220px] ${
                   quest.isActive
                     ? 'border-2 border-brand-orange shadow-brand-orange/10'
                     : 'border border-brand-dark'
                 } ${quest.isUpcoming ? 'opacity-50 select-none' : ''}`}
               >
-                {/* Completed Green Checkmark Overlay */}
-                {quest.isCompleted && (
-                  <div className="absolute inset-0 bg-brand-black/75 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center gap-1 text-[#10b981] animate-in fade-in">
-                    <CheckCircle2 className="w-7 h-7 text-[#10b981]" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Completed</span>
-                  </div>
-                )}
-
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <div className="w-10 h-10 rounded-lg bg-brand-dark flex items-center justify-center text-brand-orange">
@@ -397,7 +399,7 @@ export const Dashboard: React.FC<{
                 <div className="space-y-1.5 pt-2 border-t border-brand-dark/50">
                   <div className="flex items-center justify-between text-[11px] font-mono">
                     <span className="text-brand-muted">
-                      {quest.isUpcoming ? 'Locked until tomorrow' : (quest.isCompleted ? 'Goal reached' : 'Progress')}
+                      {quest.isUpcoming ? 'Locked until tomorrow' : 'Progress'}
                     </span>
                     <strong className="text-brand-light font-bold">
                       {quest.progress} / {quest.target}
@@ -406,9 +408,7 @@ export const Dashboard: React.FC<{
                   <div className="h-1.5 w-full bg-brand-dark rounded-full overflow-hidden">
                     <div
                       style={{ width: `${progressPercent}%` }}
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        quest.isCompleted ? 'bg-[#10b981]' : 'bg-brand-orange'
-                      }`}
+                      className="h-full rounded-full transition-all duration-500 bg-brand-orange"
                     />
                   </div>
                 </div>

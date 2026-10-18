@@ -3,8 +3,8 @@
 
 @layer base {
   body {
-    background-color: #292C38;
-    color: #E2E8F0;
+    background-color: #0B0F17;
+    color: #F1F5F9;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
@@ -16,21 +16,21 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #292C38;
+  background: #0B0F17;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3A3F55;
+  background: #1E283B;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748B;
+  background: #334155;
 }
 
 /* Custom animations & glow */
 .glow-orange {
-  box-shadow: 0 0 25px -5px rgba(255, 174, 0, 0.35);
+  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.35);
 }
 
 .glow-green {
@@ -38,8 +38,26 @@
 }
 
 .glass-panel {
-  background: rgba(58, 63, 85, 0.75);
+  background: rgba(19, 25, 38, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.08);
+  border: 1px solid rgba(241, 245, 249, 0.08);
+}
+
+/* 3D Card Flip Utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
 }

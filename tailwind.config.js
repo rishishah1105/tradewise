@@ -7,11 +7,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        'brand-black': '#000000',
-        'brand-dark': '#292C38',
-        'brand-card': '#38384A',
-        'brand-orange': '#FFAE00',
-        'brand-light': '#E2E8F0',
+        'brand-black': '#090D16',
+        'brand-dark': '#1A2232',
+        'brand-card': '#131926',
+        'brand-orange': '#F59E0B',
+        'brand-light': '#F1F5F9',
         'brand-muted': '#94A3B8',
       },
       fontFamily: {

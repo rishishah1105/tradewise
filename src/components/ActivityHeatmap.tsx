@@ -19,11 +19,11 @@ interface MonthBlock {
 }
 
 const CELL_COLORS = [
-  '#2A2F3E', // 0
-  '#0e4429', // 1
-  '#006d32', // 2
-  '#26a641', // 3
-  '#39d353', // >= 4
+  '#222B3A', // 0: Sleek dark graphite (seamless blend)
+  '#14532d', // 1: Forest green
+  '#16a34a', // 2: Medium emerald
+  '#22c55e', // 3: Vibrant green
+  '#4ade80', // >= 4: Bright mint green (LeetCode style)
 ];
 
 const getCellColor = (count: number): string => {
@@ -158,10 +158,10 @@ export const ActivityHeatmap: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className="bg-brand-card rounded-lg p-6 shadow-xl space-y-4 relative"
+      className="bg-brand-card border border-slate-800/80 rounded-xl p-6 shadow-xl space-y-5 relative"
     >
       {/* Header Row */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-brand-dark pb-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
         <div className="text-sm">
           <strong className="text-brand-light font-bold text-base mr-1">{totalActivities}</strong>
           <span className="text-brand-muted">activities in the past one year</span>
@@ -172,20 +172,20 @@ export const ActivityHeatmap: React.FC = () => {
       </div>
 
       {/* Grid Container */}
-      <div className="overflow-x-auto pb-2 flex justify-center">
-        <div className="min-w-max flex items-start gap-2">
+      <div className="overflow-x-auto py-2 flex justify-center w-full">
+        <div className="min-w-max flex items-start gap-2.5">
           {monthBlocks.map((block) => (
             <div key={`${block.year}-${block.month}`} className="flex flex-col items-center">
               {/* Month Weeks Grid */}
-              <div className="flex gap-[3px]">
+              <div className="flex gap-[3.5px]">
                 {block.weeks.map((week, wIdx) => (
-                  <div key={wIdx} className="flex flex-col gap-[3px]">
+                  <div key={wIdx} className="flex flex-col gap-[3.5px]">
                     {week.map((cell, dIdx) => {
                       if (!cell || cell.isFuture) {
                         return (
                           <div
                             key={dIdx}
-                            className="w-[12px] h-[12px] opacity-0 pointer-events-none"
+                            className="w-[14px] h-[14px] opacity-0 pointer-events-none"
                           />
                         );
                       }
@@ -196,8 +196,8 @@ export const ActivityHeatmap: React.FC = () => {
                           onMouseEnter={(e) => handleCellMouseEnter(e, cell)}
                           onMouseLeave={handleCellMouseLeave}
                           style={{ backgroundColor: getCellColor(cell.count) }}
-                          className={`w-[12px] h-[12px] rounded-[3px] cursor-pointer transition-colors ${
-                            cell.isToday ? 'outline outline-1 outline-white/40' : ''
+                          className={`w-[14px] h-[14px] rounded-[3.5px] cursor-pointer transition-transform hover:scale-110 ${
+                            cell.isToday ? 'outline outline-1 outline-white/70 ring-1 ring-emerald-400/40' : ''
                           }`}
                         />
                       );
@@ -207,7 +207,7 @@ export const ActivityHeatmap: React.FC = () => {
               </div>
 
               {/* Month Label */}
-              <span className="text-[11px] text-brand-muted text-center pt-2 font-medium">
+              <span className="text-[11px] text-brand-muted text-center pt-2.5 font-medium tracking-tight">
                 {block.monthName}
               </span>
             </div>
@@ -223,20 +223,20 @@ export const ActivityHeatmap: React.FC = () => {
             top: `${tooltip.y - 8}px`,
             transform: 'translate(-50%, -100%)',
           }}
-          className="absolute z-50 bg-[#1e2030] border border-white/10 text-[11px] text-brand-light px-2.5 py-1.5 rounded-lg shadow-xl pointer-events-none whitespace-nowrap"
+          className="absolute z-50 bg-[#0E131F] border border-slate-700/80 text-[11px] text-brand-light px-2.5 py-1.5 rounded-lg shadow-2xl pointer-events-none whitespace-nowrap"
         >
           {tooltip.text}
         </div>
       )}
 
       {/* Legend */}
-      <div className="flex items-center justify-end gap-1.5 text-xs text-brand-muted pt-2 border-t border-brand-dark/50">
+      <div className="flex items-center justify-end gap-1.5 text-xs text-brand-muted pt-3 border-t border-slate-800/80">
         <span className="mr-1 text-[11px]">Less</span>
         {CELL_COLORS.map((color, idx) => (
           <div
             key={idx}
             style={{ backgroundColor: color }}
-            className="w-[12px] h-[12px] rounded-[3px]"
+            className="w-[14px] h-[14px] rounded-[3.5px]"
           />
         ))}
         <span className="ml-1 text-[11px]">More</span>

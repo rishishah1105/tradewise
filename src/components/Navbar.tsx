@@ -3,6 +3,7 @@ import { LayoutDashboard, Compass, CandlestickChart, Trophy, User, Flame } from 
 import { useApp } from '../context/AppContext';
 import { getLevelInfo } from '../utils/level';
 import { UserAvatar } from './UserAvatar';
+import { LeetCodeDailyProgressCalendar } from './LeetCodeDailyProgressCalendar';
 
 export interface NavbarProps {
   activeTab: string;
@@ -63,15 +64,22 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
 
           {/* Gamification Pills & Avatar */}
           <div className="flex items-center gap-3">
-            {/* Daily Streak Flame */}
-            <button
-              onClick={claimDailyStreak}
-              title="Click to claim daily streak bonus!"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-orange/10 border border-brand-orange/30 text-brand-orange rounded-xl text-xs font-bold hover:bg-brand-orange/20 transition-all cursor-pointer group"
-            >
-              <Flame className="w-4 h-4 text-brand-orange group-hover:scale-110 transition-transform animate-pulse" />
-              <span>{user.streak}d</span>
-            </button>
+            {/* Daily Streak Flame with LeetCode Calendar Popover */}
+            <div className="relative group">
+              <button
+                onClick={claimDailyStreak}
+                title="Click to claim daily streak bonus or view calendar"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-orange/10 border border-brand-orange/30 text-brand-orange rounded-xl text-xs font-bold hover:bg-brand-orange/20 transition-all cursor-pointer"
+              >
+                <Flame className="w-4 h-4 text-brand-orange group-hover:scale-110 transition-transform animate-pulse" />
+                <span>{user.streak}d</span>
+              </button>
+
+              {/* Hover Popover showing LeetCode Month Chart */}
+              <div className="absolute right-0 top-full pt-2 z-50 hidden group-hover:block group-focus-within:block">
+                <LeetCodeDailyProgressCalendar onClaimStreak={claimDailyStreak} />
+              </div>
+            </div>
 
             {/* XP Pill with Hover & Focus Popover */}
             <div className="relative group hidden lg:block">
