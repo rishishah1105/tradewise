@@ -14,6 +14,15 @@ export interface UserProfile {
   currency: 'INR';
   streakFreezeAvailable: boolean;
   activityLog: Record<string, number>;
+  handle?: string;            // public username, e.g. "rishi_invests"
+  bio?: string;               // max 160 chars
+  institution?: string;       // college / company, max 60
+  city?: string;              // max 40
+  experienceLevel?: 'Beginner' | 'Intermediate' | 'Advanced';
+  avatarUrl?: string;         // small JPEG data URL (see 4c), optional
+  avatarColor?: string;       // hex used for initials avatar when no photo
+  links?: { linkedin?: string; github?: string; twitter?: string };
+  joinedAt?: string;          // YYYY-MM-DD (toDateKey); set once if missing
 }
 
 
@@ -119,6 +128,8 @@ interface AppContextType {
   resetAllProgress: () => void;
   removeToast: (id: string) => void;
   addToast: (title: string, message: string, type?: 'xp' | 'trade' | 'badge' | 'streak' | 'info') => void;
+  updateProfile: (updates: Partial<Pick<UserProfile,
+    'name'|'handle'|'bio'|'institution'|'city'|'experienceLevel'|'avatarUrl'|'avatarColor'|'links'>>) => void;
 }
 
 const INITIAL_USER: UserProfile = {
@@ -129,7 +140,8 @@ const INITIAL_USER: UserProfile = {
   lastCheckInDate: toDateKey(),
   currency: 'INR',
   streakFreezeAvailable: true,
-  activityLog: {}
+  activityLog: {},
+  joinedAt: toDateKey()
 };
 
 const INITIAL_QUESTS: DailyQuest[] = [
@@ -221,7 +233,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('tradewise_user');
-    const merged = saved ? { ...INITIAL_USER, ...JSON.parse(saved) } : INITIAL_USER;
+    const merged: UserProfile = saved ? { ...INITIAL_USER, ...JSON.parse(saved) } : INITIAL_USER;
+    if (!merged.joinedAt) {
+      merged.joinedAt = toDateKey();
+    }
     return {
       ...merged,
       level: getLevelInfo(merged.xp).level
@@ -376,8 +391,41 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
+  const addToast = (title: string, message: string, type: 'xp' | 'trade' | 'badge' | 'streak' | 'info' = 'info') => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts(prev => [...prev, { id, title, message, type }]);
+    setTimeout(() => {
+      removeToast(id);
+    }, 4500);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  const updateProfile = (updates: Partial<Pick<UserProfile,
+    'name'|'handle'|'bio'|'institution'|'city'|'experienceLevel'|'avatarUrl'|'avatarColor'|'links'>>) => {
+    setUser(prev => {
+      const allowed: Partial<UserProfile> = {};
+      if (updates.name !== undefined) allowed.name = updates.name;
+      if (updates.handle !== undefined) allowed.handle = updates.handle;
+      if (updates.bio !== undefined) allowed.bio = updates.bio;
+      if (updates.institution !== undefined) allowed.institution = updates.institution;
+      if (updates.city !== undefined) allowed.city = updates.city;
+      if (updates.experienceLevel !== undefined) allowed.experienceLevel = updates.experienceLevel;
+      if (updates.avatarUrl !== undefined) allowed.avatarUrl = updates.avatarUrl;
+      if (updates.avatarColor !== undefined) allowed.avatarColor = updates.avatarColor;
+      if (updates.links !== undefined) allowed.links = updates.links;
+      return { ...prev, ...allowed };
+    });
+  };
+
   useEffect(() => {
-    localStorage.setItem('tradewise_user', JSON.stringify(user));
+    try {
+      localStorage.setItem('tradewise_user', JSON.stringify(user));
+    } catch {
+      addToast('Could not save profile', 'Storage is full — try a smaller photo.', 'info');
+    }
   }, [user]);
 
   useEffect(() => {
@@ -411,18 +459,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     localStorage.setItem('tradewise_quests', JSON.stringify(quests));
   }, [quests]);
-
-  const addToast = (title: string, message: string, type: 'xp' | 'trade' | 'badge' | 'streak' | 'info' = 'info') => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts(prev => [...prev, { id, title, message, type }]);
-    setTimeout(() => {
-      removeToast(id);
-    }, 4500);
-  };
-
-  const removeToast = (id: string) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  };
 
   const formatMoney = (amount: number): string => {
     return new Intl.NumberFormat('en-IN', {
@@ -871,7 +907,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       claimQuest,
       resetAllProgress,
       removeToast,
-      addToast
+      addToast,
+      updateProfile
     }}>
       {children}
     </AppContext.Provider>

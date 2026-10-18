@@ -1,7 +1,8 @@
 import React from 'react';
-import { LayoutDashboard, Compass, CandlestickChart, Trophy, User, Flame, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Compass, CandlestickChart, Trophy, User, Flame } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getLevelInfo } from '../utils/level';
+import { UserAvatar } from './UserAvatar';
 
 export interface NavbarProps {
   activeTab: string;
@@ -125,9 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               onClick={() => setActiveTab('profile')}
               className="relative p-0.5 rounded-full bg-brand-card hover:scale-105 transition-transform cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-full bg-brand-dark flex items-center justify-center text-brand-muted">
-                <UserCircle className="w-6 h-6" />
-              </div>
+              <UserAvatar size={32} />
               <span className="absolute -bottom-1 -right-1 bg-brand-orange text-brand-black text-[9px] font-extrabold px-1 rounded-full border border-brand-black">
                 L{levelInfo.level}
               </span>

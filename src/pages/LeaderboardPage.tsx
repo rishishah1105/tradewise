@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Trophy, Flame, Crown, CandlestickChart, Award } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getLevelInfo } from '../utils/level';
+import { UserAvatar } from '../components/UserAvatar';
 
 export interface LeaderboardEntry {
   rank: number;
@@ -35,7 +36,7 @@ export const LeaderboardPage: React.FC = () => {
     rank: 4,
     name: `${user.name} (You)`,
     avatar: '',
-    university: 'TradeWise Learner',
+    university: user.institution || 'TradeWise Learner',
     xp: user.xp,
     streak: user.streak,
     portfolioReturn: 6.2,
@@ -190,7 +191,11 @@ export const LeaderboardPage: React.FC = () => {
                   #{entry.rank}
                 </span>
 
-                <div className="w-10 h-10 rounded-full border border-brand-dark bg-brand-card flex items-center justify-center text-brand-light font-bold text-sm shrink-0">{getInitials(entry.name)}</div>
+                {entry.isCurrentUser ? (
+                  <UserAvatar size={40} />
+                ) : (
+                  <div className="w-10 h-10 rounded-full border border-brand-dark bg-brand-card flex items-center justify-center text-brand-light font-bold text-sm shrink-0">{getInitials(entry.name)}</div>
+                )}
 
                 <div>
                   <h4 className="font-semibold text-lg sm:text-lg text-brand-light flex items-center gap-1.5">
