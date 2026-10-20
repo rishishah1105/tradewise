@@ -225,6 +225,32 @@ export const RoadmapPage: React.FC<{ onSelectConcept: (conceptId: string) => voi
       </div>
 
       {/* Category Filter Tabs & Chapters Sidebar Toggle */}
+      {masteredCount === 0 && (
+        <div className="bg-gradient-to-r from-brand-orange/15 via-brand-card to-brand-card border border-brand-orange/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-brand-orange text-brand-black text-[10px] font-black uppercase tracking-wider">
+                Start Here
+              </span>
+              <h4 className="text-sm sm:text-base font-bold text-brand-light">
+                Welcome! Start your learning journey with Chapter 1: What is a Stock?
+              </h4>
+            </div>
+            <p className="text-xs text-brand-muted">
+              Complete each concept to master Indian capital market mechanics, unlock subsequent topics, and earn XP.
+            </p>
+          </div>
+          <button
+            onClick={() => onSelectConcept('what-is-a-stock')}
+            className="px-5 py-2 rounded-xl bg-brand-orange text-brand-black font-bold text-xs shadow-md shadow-brand-orange/20 hover:scale-105 transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+          >
+            <span>Begin Chapter 1</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Category Filter Tabs & Chapters Sidebar Toggle */}
       <div className="flex items-center justify-between gap-2 overflow-x-auto pb-0 scrollbar-none">
         <div className="flex items-center gap-2">
           {categories.map(cat => (
@@ -280,11 +306,20 @@ export const RoadmapPage: React.FC<{ onSelectConcept: (conceptId: string) => voi
                     </span>
                   );
 
+                  const isStartingPoint = mod.id === 'what-is-a-stock' && masteredCount === 0;
+
                   if (isMastered) {
                     cardStyle = 'bg-brand-card border-[#10b981] border-2 shadow-xl cursor-pointer relative';
                     statusBadge = (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-dark text-[#10b981] text-xs font-bold border border-[#10b981]/30">
                         <CheckCircle2 className="w-3.5 h-3.5 text-[#10b981]" /> Mastered
+                      </span>
+                    );
+                  } else if (isStartingPoint) {
+                    cardStyle = 'bg-brand-card border-brand-orange border-2 shadow-xl shadow-brand-orange/10 ring-2 ring-brand-orange/40 cursor-pointer';
+                    statusBadge = (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-orange text-brand-black text-xs font-black shadow-sm">
+                        <PlayCircle className="w-3.5 h-3.5 text-brand-black" /> Starting Point
                       </span>
                     );
                   } else if (isUnlocked) {

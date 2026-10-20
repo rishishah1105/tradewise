@@ -172,30 +172,30 @@ export const StudyModulePage: React.FC<{
           </div>
 
           {activeChapter.example && (
-            <div className="p-4 bg-brand-card border-none rounded-lg space-y-1 text-xs">
-              <strong className="text-brand-light font-bold font-mono flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
-                <Lightbulb className="w-4 h-4 text-brand-orange" /> Real-World Example
+            <div className="p-4 bg-gradient-to-br from-brand-card to-[#151D2A] border border-slate-700/60 rounded-xl space-y-1.5 text-xs">
+              <strong className="text-amber-400 font-bold font-mono flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
+                <Lightbulb className="w-4 h-4 text-amber-400" /> Real-World Example
               </strong>
-              <p className="text-brand-muted leading-relaxed">{activeChapter.example}</p>
+              <p className="text-slate-100 font-medium leading-relaxed text-xs sm:text-sm">{activeChapter.example}</p>
             </div>
           )}
 
           {activeChapter.keyPoint && (
-            <div className="p-3 bg-brand-card border-none rounded-lg text-xs text-brand-light font-medium flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-brand-orange shrink-0" />
-              <span><strong>Key Takeaway:</strong> {activeChapter.keyPoint}</span>
+            <div className="p-3.5 bg-gradient-to-r from-amber-500/15 via-brand-card to-brand-card border border-amber-500/30 rounded-xl text-xs sm:text-sm text-white font-medium flex items-center gap-2.5 shadow-sm">
+              <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+              <span><strong className="text-amber-300 font-bold uppercase tracking-wider text-[11px] font-mono mr-1.5">Key Takeaway:</strong> {activeChapter.keyPoint}</span>
             </div>
           )}
 
           {activeChapter.keyTakeaways && activeChapter.keyTakeaways.length > 0 && (
-            <div className="p-4 bg-brand-card border-none rounded-lg space-y-2 text-xs">
-              <strong className="text-brand-light font-bold font-mono flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
-                <CheckCircle2 className="w-4 h-4 text-brand-orange" /> Chapter Takeaways
+            <div className="p-4 bg-gradient-to-br from-brand-card to-[#151D2A] border border-slate-700/60 rounded-xl space-y-2.5 text-xs">
+              <strong className="text-amber-400 font-bold font-mono flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
+                <CheckCircle2 className="w-4 h-4 text-amber-400" /> Chapter Takeaways
               </strong>
-              <ul className="space-y-1.5 text-brand-muted leading-relaxed">
+              <ul className="space-y-2 text-slate-100 font-medium leading-relaxed text-xs sm:text-sm">
                 {activeChapter.keyTakeaways.map((takeaway, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <span className="text-brand-orange font-bold select-none">•</span>
+                  <li key={idx} className="flex items-start gap-2.5">
+                    <span className="text-amber-400 font-black select-none mt-0.5">•</span>
                     <span>{takeaway}</span>
                   </li>
                 ))}
@@ -253,15 +253,39 @@ export const StudyModulePage: React.FC<{
       </div>
 
       {/* Module Key Takeaways Summary */}
-      <div className="bg-brand-card border-none rounded-lg p-6 sm:p-8 space-y-4 shadow-xl">
-        <h3 className="text-lg font-semibold text-brand-light flex items-center gap-2">
-          <CheckCircle2 className="w-5 h-5 text-brand-muted" /> Module Key Takeaways
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="bg-gradient-to-br from-brand-card via-[#161f30] to-brand-card border border-amber-500/25 rounded-2xl p-6 sm:p-8 space-y-5 shadow-2xl relative overflow-hidden">
+        {/* Ambient background glow */}
+        <div className="absolute -top-20 -right-20 w-56 h-56 bg-brand-orange/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex items-center justify-between flex-wrap gap-2 relative z-10">
+          <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+            <span className="p-1.5 rounded-lg bg-brand-orange/20 border border-brand-orange/40 text-brand-orange flex items-center justify-center shadow-sm">
+              <CheckCircle2 className="w-5 h-5 text-brand-orange" />
+            </span>
+            <span>Module Key Takeaways</span>
+          </h3>
+          <span className="text-[11px] font-bold uppercase tracking-widest text-amber-400 font-mono px-2.5 py-1 rounded-md bg-amber-400/10 border border-amber-400/25">
+            Core Rules • {module.keyTakeaways.length} Key Lessons
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
           {module.keyTakeaways.map((takeaway, tIdx) => (
-            <div key={tIdx} className="p-4 bg-brand-dark rounded-lg border-none space-y-1">
-              <span className="text-[10px] font-bold text-brand-muted uppercase tracking-wider block">Rule #{tIdx + 1}</span>
-              <p className="text-sm text-brand-muted font-normal leading-relaxed">{takeaway}</p>
+            <div
+              key={tIdx}
+              className="p-5 bg-gradient-to-br from-[#1E293B] to-[#111827] rounded-xl border border-slate-700/80 hover:border-amber-400/60 hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-200 space-y-2.5 group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-black uppercase tracking-widest bg-amber-400/20 text-amber-300 border border-amber-400/40 font-mono shadow-sm">
+                  RULE #{tIdx + 1}
+                </span>
+                <span className="text-amber-400/50 group-hover:text-amber-300 text-xs transition-colors font-mono">
+                  ★
+                </span>
+              </div>
+              <p className="text-sm sm:text-[15px] text-white font-medium leading-relaxed group-hover:text-amber-50 transition-colors">
+                {takeaway}
+              </p>
             </div>
           ))}
         </div>

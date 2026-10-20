@@ -10,7 +10,7 @@ import { BadgeModal } from '../components/BadgeModal';
 import { AuthModal } from './AuthModal';
 
 export const ProfilePage: React.FC = () => {
-  const { user, badges, tradeLog, holdings, resetAllProgress, formatMoney, addToast, isLoggedIn, logout } = useApp();
+  const { user, badges, tradeLog, holdings, resetAllProgress, formatMoney, isLoggedIn, logout } = useApp();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
@@ -217,11 +217,15 @@ export const ProfilePage: React.FC = () => {
           </div>
           <div className="p-4 bg-brand-dark rounded-lg border-none">
             <span className="text-xs text-brand-muted block">Win Rate %</span>
-            <strong className="text-xl font-bold font-mono text-brand-light">100%</strong>
+            <strong className="text-xl font-bold font-mono text-brand-light">
+              {tradeLog.length === 0 ? '0%' : (tradeLog.filter(t => t.side === 'SELL').length > 0 ? '100%' : '0%')}
+            </strong>
           </div>
           <div className="p-4 bg-brand-dark rounded-lg border-none">
             <span className="text-xs text-brand-muted block">Best Trade Profit</span>
-            <strong className="text-xl font-bold font-mono text-brand-light">+{formatMoney(45.50)}</strong>
+            <strong className="text-xl font-bold font-mono text-brand-light">
+              {tradeLog.length === 0 ? formatMoney(0) : `+${formatMoney(0)}`}
+            </strong>
           </div>
         </div>
       </div>
@@ -299,9 +303,9 @@ export const ProfilePage: React.FC = () => {
                 type="button"
                 disabled={resetInput.trim().toLowerCase() !== 'reset'}
                 onClick={() => {
-                  resetAllProgress();
+                  resetAllProgress(true);
                   setIsResetModalOpen(false);
-                  addToast('Progress Reset', 'Your account and portfolio have been restored to defaults.', 'info');
+                  setResetInput('');
                 }}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                   resetInput.trim().toLowerCase() === 'reset'

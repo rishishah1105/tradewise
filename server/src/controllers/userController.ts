@@ -31,6 +31,7 @@ export const getOrCreateUser = async (req: Request, res: Response) => {
               trades: { orderBy: { timestamp: 'desc' }, take: 50 },
               badges: true,
               dailyQuests: true,
+              learningChallenges: true,
             },
           })
         : await prisma.user.findFirst({
@@ -42,6 +43,7 @@ export const getOrCreateUser = async (req: Request, res: Response) => {
               trades: { orderBy: { timestamp: 'desc' }, take: 50 },
               badges: true,
               dailyQuests: true,
+              learningChallenges: true,
             },
           });
 
@@ -152,19 +154,39 @@ export const claimDailyStreak = async (req: Request, res: Response) => {
       return;
     }
 
+    // Idempotency: Prevent duplicate claim for the same date
+    if (user.lastCheckInDate === todayKey) {
+      res.json({
+        success: true,
+        alreadyClaimed: true,
+        message: 'Streak already claimed for today',
+        data: user,
+      });
+      return;
+    }
+
     const newXP = (user.xp || 0) + 50;
     const newStreak = (user.streak || 0) + 1;
     const newLevel = calculateLevel(newXP);
 
-    const updated = await prisma.user.update({
-      where: { id: targetId },
-      data: {
-        xp: newXP,
-        level: newLevel,
-        streak: newStreak,
-        lastCheckInDate: todayKey,
-      },
-    });
+    const [updated] = await prisma.$transaction([
+      prisma.user.update({
+        where: { id: targetId },
+        data: {
+          xp: newXP,
+          level: newLevel,
+          streak: newStreak,
+          lastCheckInDate: todayKey,
+        },
+      }),
+      prisma.activityLog.upsert({
+        where: {
+          userId_dateKey: { userId: targetId, dateKey: todayKey },
+        },
+        update: { count: { increment: 1 } },
+        create: { userId: targetId, dateKey: todayKey, count: 1 },
+      }),
+    ]);
 
     res.json({ success: true, data: updated });
   } catch (error) {
@@ -195,22 +217,16 @@ export const resetAllProgress = async (req: Request, res: Response) => {
       prisma.tradeLog.deleteMany({ where: { userId: user.id } }),
       prisma.userBadge.deleteMany({ where: { userId: user.id } }),
       prisma.dailyQuestState.deleteMany({ where: { userId: user.id } }),
+      prisma.learningChallengeProgress.deleteMany({ where: { userId: user.id } }),
       prisma.user.update({
         where: { id: user.id },
         data: {
-          xp: 150,
+          xp: 0,
           level: 1,
           streak: 0,
           lastCheckInDate: null,
           cashBalance: 100000.0,
           startingBalance: 100000.0,
-        },
-      }),
-      prisma.userBadge.create({
-        data: {
-          userId: user.id,
-          badgeId: 'first-step',
-          unlockedAt: 'Just now',
         },
       }),
     ]);

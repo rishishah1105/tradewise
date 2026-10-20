@@ -384,14 +384,13 @@ export const SimulatorPage: React.FC = () => {
         await fetchBackendPortfolio();
       } else {
         // Fallback to local context execution if backend is offline
-        const localRes = localPlaceOrder(
+        localPlaceOrder(
           selectedSymbol,
           orderSide,
           orderType,
           quantity,
           orderType === 'LIMIT' ? Number(limitPriceInput) : undefined
         );
-        addToast(localRes.success ? 'Order Executed' : 'Order Rejected', localRes.message, localRes.success ? 'trade' : 'info');
       }
     } catch (err) {
       console.warn('Order submission error:', err);
@@ -408,7 +407,6 @@ export const SimulatorPage: React.FC = () => {
       await fetchBackendPortfolio();
     } else {
       localCancelOrder(orderId);
-      addToast('Order Cancelled', 'Limit order cancelled locally', 'info');
     }
   };
 

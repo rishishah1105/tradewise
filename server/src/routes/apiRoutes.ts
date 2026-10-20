@@ -19,7 +19,7 @@ import {
   placeOrder,
   cancelOrder,
 } from '../controllers/portfolioController.js';
-import { completeQuiz } from '../controllers/learningController.js';
+import { completeQuiz, getLearningProgress } from '../controllers/learningController.js';
 import { getLeaderboard } from '../controllers/leaderboardController.js';
 import { paperTradingRouter } from './paperTradingRoutes.js';
 
@@ -51,6 +51,7 @@ apiRouter.post('/portfolio/order', placeOrder);
 apiRouter.post('/portfolio/order/cancel', cancelOrder);
 
 // Learning & Quizzes
+apiRouter.get('/learning/progress', getLearningProgress);
 apiRouter.post('/learning/quiz', completeQuiz);
 
 // Leaderboard

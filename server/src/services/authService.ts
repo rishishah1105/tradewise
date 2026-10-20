@@ -255,29 +255,24 @@ export class AuthService {
           institution: 'TradeWise Learner',
           city: 'Mumbai',
           experienceLevel: 'Beginner',
-          xp: 150,
+          xp: 0,
           level: 1,
-          streak: 1,
+          streak: 0,
           cashBalance: 100000.0,
           startingBalance: 100000.0,
           lastLoginAt: new Date(),
           onboardingCompleted: false,
-          badges: {
-            create: [
-              { badgeId: 'first-step', unlockedAt: 'Just now' },
-            ],
-          },
         },
       });
 
-      console.log(`[AuthService] Created new Google user in Neon DB: ${cleanEmail} (sub: ${googleUser.sub})`);
     } else {
-      // Update last login timestamp
+      // Update last login timestamp and avatar if provided
       user = await prisma.user.update({
         where: { id: user.id },
         data: {
           lastLoginAt: new Date(),
           avatarUrl: googleUser.avatarUrl || user.avatarUrl,
+          name: user.name || googleUser.name,
         },
       });
     }
@@ -338,6 +333,7 @@ export class AuthService {
             orders: { where: { status: 'PENDING' } },
             trades: { orderBy: { timestamp: 'desc' }, take: 20 },
             dailyQuests: true,
+            learningChallenges: true,
           },
         },
       },

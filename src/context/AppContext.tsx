@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import confetti from 'canvas-confetti';
 import { MODULES_DATA } from '../data/modulesData';
 import { INITIAL_STOCKS, type StockInstrument, generateOrderBook, generateMockStock } from '../data/stocksData';
@@ -139,7 +139,7 @@ interface AppContextType {
   cancelOrder: (orderId: string) => void;
   claimDailyStreak: () => void;
   claimQuest: (questId: string) => void;
-  resetAllProgress: () => void;
+  resetAllProgress: (showToast?: boolean) => void;
   removeToast: (id: string) => void;
   addToast: (title: string, message: string, type?: 'xp' | 'trade' | 'badge' | 'streak' | 'info') => void;
   updateProfile: (updates: Partial<Pick<UserProfile,
@@ -147,11 +147,11 @@ interface AppContextType {
 }
 
 const INITIAL_USER: UserProfile = {
-  name: 'Rishi',
-  xp: 150,
+  name: 'TradeWise Learner',
+  xp: 0,
   level: 1,
-  streak: 3,
-  lastCheckInDate: toDateKey(),
+  streak: 0,
+  lastCheckInDate: '',
   currency: 'INR',
   streakFreezeAvailable: true,
   activityLog: {},
@@ -159,13 +159,13 @@ const INITIAL_USER: UserProfile = {
 };
 
 const INITIAL_QUESTS: DailyQuest[] = [
-  { id: 'quest-1', title: 'Complete 1 Study Module', target: 1, current: 1, completed: false, xpReward: 50 },
+  { id: 'quest-1', title: 'Complete 1 Study Module', target: 1, current: 0, completed: false, xpReward: 50 },
   { id: 'quest-2', title: 'Place 1 Paper Trade in Simulator', target: 1, current: 0, completed: false, xpReward: 50 },
   { id: 'quest-3', title: 'Achieve 100% on any Concept Quiz', target: 1, current: 0, completed: false, xpReward: 75 }
 ];
 
 const INITIAL_BADGES: Badge[] = [
-  { id: 'first-step', title: 'First Step', description: 'Complete your first concept study module', iconName: 'BookOpen', unlocked: true, unlockedAt: '2 days ago', category: 'learning' },
+  { id: 'first-step', title: 'First Step', description: 'Complete your first concept study module', iconName: 'BookOpen', unlocked: false, category: 'learning' },
   { id: 'quiz-perfectionist', title: 'Quiz Perfectionist', description: 'Score 100% on any module quiz', iconName: 'Award', unlocked: false, category: 'learning' },
   { id: 'first-trade', title: 'First Paper Trade', description: 'Place your first buy or sell order in the simulator', iconName: 'TrendingUp', unlocked: false, category: 'trading' },
   { id: 'diversifier', title: 'The Diversifier', description: 'Hold 3 or more distinct instruments in your portfolio', iconName: 'PieChart', unlocked: false, category: 'trading' },
@@ -230,30 +230,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (dailyQuestState.completed) return;
     if (activeQuestConfig.id !== actionId) return;
 
+    const newProgress = Math.min(activeQuestConfig.target, dailyQuestState.progress + amount);
+    const isCompleted = newProgress >= activeQuestConfig.target;
+
     setDailyQuestState(prev => {
-      const newProgress = Math.min(activeQuestConfig.target, prev.progress + amount);
-      if (newProgress >= activeQuestConfig.target && !prev.completed) {
-        setUser(u => {
-          const newXP = u.xp + activeQuestConfig.reward;
-          return { ...u, xp: newXP, level: getLevelInfo(newXP).level };
-        });
-        addToast('Daily Quest Completed! 🎁', `+${activeQuestConfig.reward} XP for: ${activeQuestConfig.title}`, 'xp');
-        confetti({ particleCount: 60, spread: 50, origin: { y: 0.6 } });
-        return { ...prev, progress: newProgress, completed: true };
-      }
-      return { ...prev, progress: newProgress };
+      if (prev.completed) return prev;
+      return { ...prev, progress: newProgress, completed: isCompleted };
     });
+
+    if (isCompleted && !dailyQuestState.completed) {
+      setUser(u => {
+        const newXP = u.xp + activeQuestConfig.reward;
+        return { ...u, xp: newXP, level: getLevelInfo(newXP).level };
+      });
+      addToast('Daily Quest Completed! 🎁', `+${activeQuestConfig.reward} XP for: ${activeQuestConfig.title}`, 'xp');
+      confetti({ particleCount: 60, spread: 50, origin: { y: 0.6 } });
+    }
   };
 
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('tradewise_user');
-    const merged: UserProfile = saved ? { ...INITIAL_USER, ...JSON.parse(saved) } : INITIAL_USER;
+    let parsed: any = null;
+    try {
+      parsed = saved ? JSON.parse(saved) : null;
+    } catch {
+      parsed = null;
+    }
+
+    const merged: UserProfile = parsed ? { ...INITIAL_USER, ...parsed } : INITIAL_USER;
     if (!merged.joinedAt) {
       merged.joinedAt = toDateKey();
     }
     return {
       ...merged,
-      level: getLevelInfo(merged.xp).level
+      level: getLevelInfo(merged.xp).level,
     };
   });
 
@@ -266,9 +276,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const applyRemoteUserData = (remote: any) => {
     if (!remote) return;
+
+    const safeXp = remote.xp !== undefined ? Number(remote.xp) : 0;
+    const safeStreak = remote.streak !== undefined ? Number(remote.streak) : 0;
+    const safeLevel = remote.level !== undefined ? Number(remote.level) : getLevelInfo(safeXp).level;
+
     setUser(prev => ({
       ...prev,
-      name: remote.name || prev.name,
+      name: remote.name || 'TradeWise Learner',
       email: remote.email || prev.email,
       handle: remote.handle || prev.handle,
       bio: remote.bio || prev.bio,
@@ -277,14 +292,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       experienceLevel: remote.experienceLevel || prev.experienceLevel,
       avatarUrl: remote.avatarUrl || prev.avatarUrl,
       avatarColor: remote.avatarColor || prev.avatarColor,
-      xp: remote.xp !== undefined ? remote.xp : prev.xp,
-      level: remote.level !== undefined ? remote.level : prev.level,
-      streak: remote.streak !== undefined ? remote.streak : prev.streak,
-      lastCheckInDate: remote.lastCheckInDate || prev.lastCheckInDate,
-      activityLog: remote.activityLogs?.reduce((acc: Record<string, number>, curr: { dateKey: string; count: number }) => {
-        acc[curr.dateKey] = curr.count;
-        return acc;
-      }, { ...prev.activityLog }) || prev.activityLog,
+      xp: safeXp,
+      level: safeLevel,
+      streak: safeStreak,
+      lastCheckInDate: remote.lastCheckInDate || prev.lastCheckInDate || '',
+      activityLog: Array.isArray(remote.activityLogs)
+        ? remote.activityLogs.reduce((acc: Record<string, number>, curr: { dateKey: string; count: number }) => {
+            acc[curr.dateKey] = curr.count;
+            return acc;
+          }, {})
+        : prev.activityLog || {},
       links: {
         linkedin: remote.linkedin || prev.links?.linkedin,
         github: remote.github || prev.links?.github,
@@ -292,32 +309,55 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     }));
 
-    if (remote.masteredConcepts?.length) {
-      setMasteredConceptIds(prev => Array.from(new Set([...prev, ...remote.masteredConcepts.map((m: any) => m.conceptId)])));
-      setCompletedQuizScores(prev => {
-        const scores = { ...prev };
-        remote.masteredConcepts.forEach((m: any) => {
-          scores[m.conceptId] = Math.max(scores[m.conceptId] || 0, m.scorePercent);
-        });
-        return scores;
+    // Restore mastered concepts faithfully from verified database records
+    if (Array.isArray(remote.masteredConcepts)) {
+      setMasteredConceptIds(remote.masteredConcepts.map((m: any) => m.conceptId));
+      const scores: Record<string, number> = {};
+      remote.masteredConcepts.forEach((m: any) => {
+        scores[m.conceptId] = m.scorePercent;
       });
+      setCompletedQuizScores(scores);
+    } else {
+      setMasteredConceptIds([]);
+      setCompletedQuizScores({});
+    }
+
+    // Restore user badges from database
+    if (Array.isArray(remote.badges)) {
+      setBadges(INITIAL_BADGES.map(badge => {
+        const earned = remote.badges.find((b: any) => b.badgeId === badge.id);
+        if (earned) {
+          return {
+            ...badge,
+            unlocked: true,
+            unlockedAt: earned.unlockedAt || 'Earned',
+          };
+        }
+        return {
+          ...badge,
+          unlocked: false,
+          unlockedAt: undefined,
+        };
+      }));
+    } else {
+      setBadges(INITIAL_BADGES.map(b => ({ ...b, unlocked: false, unlockedAt: undefined })));
     }
 
     if (remote.cashBalance !== undefined) {
       setCashBalance(remote.cashBalance);
     }
 
-    if (remote.holdings?.length) {
-      setHoldings(() => {
-        const hMap: Record<string, PortfolioHolding> = {};
-        remote.holdings.forEach((h: any) => {
-          hMap[h.symbol] = { symbol: h.symbol, shares: h.shares, avgCost: h.avgCost };
-        });
-        return hMap;
+    if (Array.isArray(remote.holdings)) {
+      const hMap: Record<string, PortfolioHolding> = {};
+      remote.holdings.forEach((h: any) => {
+        hMap[h.symbol] = { symbol: h.symbol, shares: h.shares, avgCost: h.avgCost };
       });
+      setHoldings(hMap);
+    } else {
+      setHoldings({});
     }
 
-    if (remote.orders?.length) {
+    if (Array.isArray(remote.orders)) {
       setOpenOrders(remote.orders.map((o: any) => ({
         id: o.id,
         symbol: o.symbol,
@@ -328,9 +368,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         createdAt: new Date(o.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
         status: o.status,
       })));
+    } else {
+      setOpenOrders([]);
     }
 
-    if (remote.trades?.length) {
+    if (Array.isArray(remote.trades)) {
       setTradeLog(remote.trades.map((t: any) => ({
         id: t.id,
         symbol: t.symbol,
@@ -340,6 +382,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         total: t.total,
         timestamp: new Date(t.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
       })));
+    } else {
+      setTradeLog([]);
     }
   };
 
@@ -424,8 +468,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     localStorage.removeItem('tradewise_session_token');
     localStorage.removeItem('tradewise_logged_in_email');
+    localStorage.removeItem('tradewise_user');
+    localStorage.removeItem('tradewise_mastered');
+    localStorage.removeItem('tradewise_scores');
+    localStorage.removeItem('tradewise_cash');
+    localStorage.removeItem('tradewise_holdings');
+    localStorage.removeItem('tradewise_open_orders');
+    localStorage.removeItem('tradewise_tradelog');
+    localStorage.removeItem('tradewise_badges');
+    localStorage.removeItem('tradewise_quests');
+    localStorage.removeItem('dailyQuest');
+
     setIsLoggedIn(false);
     setUser({ ...INITIAL_USER, email: undefined });
+    setMasteredConceptIds([]);
+    setCompletedQuizScores({});
+    setHoldings({});
+    setOpenOrders([]);
+    setTradeLog([]);
+    setBadges(INITIAL_BADGES);
+    setQuests(INITIAL_QUESTS);
+    setCashBalance(100000);
+
     window.location.hash = '#landing';
     addToast('Signed Out', 'You have been signed out successfully.', 'info');
   };
@@ -552,12 +616,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const [masteredConceptIds, setMasteredConceptIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('tradewise_mastered');
-    return saved ? JSON.parse(saved) : ['what-is-a-stock'];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [completedQuizScores, setCompletedQuizScores] = useState<Record<string, number>>(() => {
     const saved = localStorage.getItem('tradewise_scores');
-    return saved ? JSON.parse(saved) : { 'what-is-a-stock': 100 };
+    return saved ? JSON.parse(saved) : {};
   });
 
   const [cashBalance, setCashBalance] = useState<number>(() => {
@@ -569,9 +633,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const [holdings, setHoldings] = useState<Record<string, PortfolioHolding>>(() => {
     const saved = localStorage.getItem('tradewise_holdings');
-    return saved ? JSON.parse(saved) : {
-      'RELIANCE': { symbol: 'RELIANCE', shares: 5, avgCost: 2950.00 }
-    };
+    return saved ? JSON.parse(saved) : {};
   });
 
   const [openOrders, setOpenOrders] = useState<TradeOrder[]>(() => {
@@ -581,9 +643,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const [tradeLog, setTradeLog] = useState<TradeLog[]>(() => {
     const saved = localStorage.getItem('tradewise_tradelog');
-    return saved ? JSON.parse(saved) : [
-      { id: 'initial-1', symbol: 'RELIANCE', side: 'BUY', shares: 5, price: 2950.00, total: 14750.00, timestamp: '1 day ago' }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [badges, setBadges] = useState<Badge[]>(() => {
@@ -598,7 +658,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
+  const recentToastsRef = useRef<Map<string, number>>(new Map());
+
   const addToast = (title: string, message: string, type: 'xp' | 'trade' | 'badge' | 'streak' | 'info' = 'info') => {
+    const key = `${type}:${title}:${message}`;
+    const now = Date.now();
+    const lastTimestamp = recentToastsRef.current.get(key) || 0;
+    if (now - lastTimestamp < 1500) {
+      // Deduplicate identical toasts fired within 1.5 seconds (prevents StrictMode or double-click duplicates)
+      return;
+    }
+    recentToastsRef.current.set(key, now);
+
+    // Prune stale keys
+    if (recentToastsRef.current.size > 30) {
+      for (const [k, time] of recentToastsRef.current.entries()) {
+        if (now - time > 10000) {
+          recentToastsRef.current.delete(k);
+        }
+      }
+    }
+
     const id = Math.random().toString(36).substring(2, 9);
     setToasts(prev => [...prev, { id, title, message, type }]);
     setTimeout(() => {
@@ -827,14 +907,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const unlockBadge = (badgeId: string) => {
-    setBadges(prev => prev.map(b => {
-      if (b.id === badgeId && !b.unlocked) {
-        addToast(`New Badge Unlocked! 🏆`, b.title, 'badge');
-        confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
-        return { ...b, unlocked: true, unlockedAt: 'Just now' };
+    setBadges(prev => {
+      const target = prev.find(b => b.id === badgeId);
+      if (target && !target.unlocked) {
+        setTimeout(() => {
+          addToast(`New Badge Unlocked! 🏆`, target.title, 'badge');
+          confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+        }, 0);
+        return prev.map(b => (b.id === badgeId ? { ...b, unlocked: true, unlockedAt: 'Just now' } : b));
       }
-      return b;
-    }));
+      return prev;
+    });
   };
 
   const checkDiversifierBadge = () => {
@@ -844,7 +927,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const completeModuleQuiz = (moduleId: string, scorePercent: number) => {
+  const completeModuleQuiz = async (moduleId: string, scorePercent: number) => {
     const mod = MODULES_DATA.find(m => m.id === moduleId);
     if (!mod) return;
 
@@ -855,27 +938,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setMasteredConceptIds(prev => [...prev, moduleId]);
 
       const earnedXP = mod.xpReward + (scorePercent === 100 ? 50 : 0);
-      setUser(prev => {
-        const newXP = prev.xp + earnedXP;
-        const newLevel = getLevelInfo(newXP).level;
-        if (newLevel > prev.level) {
-          addToast(`LEVEL UP! 🌟`, `You reached Level ${newLevel}!`, 'xp');
-        }
-        return { ...prev, xp: newXP, level: newLevel };
-      });
+      const currentXP = user.xp;
+      const newXP = currentXP + earnedXP;
+      const newLevel = getLevelInfo(newXP).level;
+      const leveledUp = newLevel > user.level;
 
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.5 } });
+      setUser(prev => ({ ...prev, xp: prev.xp + earnedXP, level: getLevelInfo(prev.xp + earnedXP).level }));
+
+      if (leveledUp) {
+        addToast(`LEVEL UP! 🌟`, `You reached Level ${newLevel}!`, 'xp');
+      }
+
       addToast(
         `Concept Mastered! +${earnedXP} XP`,
         `You unlocked ${mod.title}!`,
         'xp'
       );
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.5 } });
 
       // Quest progress update
       updateQuestProgress('quest-1', 1);
       logActivity();
       updateDailyQuestProgress('q-study-1');
       updateDailyQuestProgress('q-study-2');
+
+      if (masteredConceptIds.length === 0) {
+        unlockBadge('first-step');
+      }
 
       if (scorePercent === 100) {
         unlockBadge('quiz-perfectionist');
@@ -889,8 +978,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         unlockBadge('basics-master');
       }
 
-      // Background sync to PostgreSQL
-      api.completeQuiz(moduleId, scorePercent, mod.xpReward).catch(() => {});
+      // Background sync to PostgreSQL with confirmed synchronization
+      try {
+        const remoteData = await api.completeQuiz(moduleId, scorePercent, mod.xpReward);
+        if (remoteData && remoteData.newXP !== undefined) {
+          setUser(prev => ({
+            ...prev,
+            xp: remoteData.newXP,
+            level: remoteData.newLevel || getLevelInfo(remoteData.newXP).level,
+          }));
+        }
+      } catch (err) {
+        console.warn('[Learning] completeQuiz sync error:', err);
+      }
     }
   };
 
@@ -1117,36 +1217,68 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     api.cancelOrder(orderId).catch(() => {});
   };
 
-  const claimDailyStreak = () => {
+  const claimDailyStreak = async () => {
     const today = toDateKey();
-    if (user.lastCheckInDate !== today) {
-      setUser(prev => {
-        const newStreak = prev.streak + 1;
-        const newXP = prev.xp + 50;
-        addToast('Daily Streak Claimed! 🔥', `+50 XP! You're on a ${newStreak}-day streak!`, 'streak');
-        if (newStreak >= 5) {
-          unlockBadge('streak-5');
-        }
-        return { ...prev, streak: newStreak, xp: newXP, level: getLevelInfo(newXP).level, lastCheckInDate: today };
-      });
+    if (user.lastCheckInDate === today) return;
 
-      // Background sync to PostgreSQL
-      api.claimStreak(today).catch(() => {});
+    const newStreak = user.streak + 1;
+    const newXP = user.xp + 50;
+    const newLevel = getLevelInfo(newXP).level;
+
+    setUser(prev => ({
+      ...prev,
+      streak: newStreak,
+      xp: newXP,
+      level: newLevel,
+      lastCheckInDate: today,
+    }));
+
+    addToast('Daily Streak Claimed! 🔥', `+50 XP! You're on a ${newStreak}-day streak!`, 'streak');
+    if (newStreak >= 5) {
+      unlockBadge('streak-5');
+    }
+
+    // Confirmed background sync to PostgreSQL
+    try {
+      const res = await api.claimStreak(today);
+      if (res && res.xp !== undefined) {
+        setUser(prev => ({
+          ...prev,
+          xp: res.xp,
+          streak: res.streak,
+          level: res.level || getLevelInfo(res.xp).level,
+          lastCheckInDate: res.lastCheckInDate || today,
+        }));
+      }
+    } catch (err) {
+      console.warn('[Streak] Sync fallback to local state:', err);
     }
   };
 
-  const resetAllProgress = () => {
-    localStorage.clear();
+  const resetAllProgress = (showToast = true) => {
+    localStorage.removeItem('tradewise_user');
+    localStorage.removeItem('tradewise_mastered');
+    localStorage.removeItem('tradewise_scores');
+    localStorage.removeItem('tradewise_cash');
+    localStorage.removeItem('tradewise_holdings');
+    localStorage.removeItem('tradewise_open_orders');
+    localStorage.removeItem('tradewise_tradelog');
+    localStorage.removeItem('tradewise_badges');
+    localStorage.removeItem('tradewise_quests');
+    localStorage.removeItem('dailyQuest');
+
     setUser(INITIAL_USER);
-    setMasteredConceptIds(['what-is-a-stock']);
-    setCompletedQuizScores({ 'what-is-a-stock': 100 });
+    setMasteredConceptIds([]);
+    setCompletedQuizScores({});
     setCashBalance(100000);
-    setHoldings({ 'RELIANCE': { symbol: 'RELIANCE', shares: 5, avgCost: 2950.00 } });
+    setHoldings({});
     setOpenOrders([]);
     setTradeLog([]);
     setBadges(INITIAL_BADGES);
     setQuests(INITIAL_QUESTS);
-    addToast('Progress Reset', 'All user data and portfolio has been reset.', 'info');
+    if (showToast) {
+      addToast('Progress Reset', 'All learning progress and portfolio data has been reset to starting state.', 'info');
+    }
 
     // Background sync to PostgreSQL
     api.resetProgress().catch(() => {});

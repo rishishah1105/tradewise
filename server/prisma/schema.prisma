@@ -10,7 +10,7 @@ generator client {
 model User {
   id                    String            @id @default(uuid())
   email                 String?           @unique
-  name                  String            @default("Rishi")
+  name                  String            @default("TradeWise Learner")
   handle                String?           @unique
   bio                   String?           @db.VarChar(160)
   institution           String?           @default("TradeWise Learner")
@@ -21,9 +21,9 @@ model User {
   linkedin              String?
   github                String?
   twitter               String?
-  xp                    Int               @default(150)
+  xp                    Int               @default(0)
   level                 Int               @default(1)
-  streak                Int               @default(3)
+  streak                Int               @default(0)
   lastCheckInDate       String?
   streakFreezeAvailable Boolean           @default(true)
   joinedAt              String?

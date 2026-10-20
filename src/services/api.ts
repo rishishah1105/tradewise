@@ -147,7 +147,8 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/user/profile`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify(updates),
       });
       if (res.ok) {
@@ -164,7 +165,8 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/user/activity`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify({ dateKey }),
       });
       if (res.ok) {
@@ -181,7 +183,8 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/user/streak`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify({ todayKey }),
       });
       if (res.ok) {
@@ -198,7 +201,8 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/user/reset`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
       });
       if (res.ok) {
         const json = await res.json();
@@ -265,7 +269,8 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/learning/quiz`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify({ conceptId, scorePercent, xpReward }),
       });
       if (res.ok) {
@@ -274,6 +279,22 @@ export const api = {
       }
     } catch (err) {
       console.warn('[API] completeQuiz fallback to local state:', err);
+    }
+    return null;
+  },
+
+  async getLearningProgress() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/learning/progress`, {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch (err) {
+      console.warn('[API] getLearningProgress fallback:', err);
     }
     return null;
   },

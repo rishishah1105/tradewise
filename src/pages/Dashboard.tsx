@@ -38,14 +38,16 @@ export const Dashboard: React.FC<{
   }, [isCalendarOpen]);
 
   const totalConcepts = MODULES_DATA.length;
-  const masteryPercent = (masteredConceptIds.length / totalConcepts) * 100;
-  const minPercent = 5;
-  const displayPercent = masteryPercent === 0 ? 0 : Math.max(masteryPercent, minPercent);
+  const masteredCount = masteredConceptIds.length;
+  const masteryPercent = totalConcepts > 0 ? (masteredCount / totalConcepts) * 100 : 0;
+  const displayPercent = masteryPercent;
   const circumference = 2 * Math.PI * 58;
 
   const today = toDateKey();
-  const isStreakClaimed = user.lastCheckInDate === today;
+  const isStreakClaimed = Boolean(user.lastCheckInDate && user.lastCheckInDate === today);
 
+  const hasLearningActivity = masteredCount > 0;
+  const firstModule = MODULES_DATA[0];
   const nextRecommended = MODULES_DATA.find(m => !masteredConceptIds.includes(m.id)) || MODULES_DATA[0];
 
   let holdingsValue = 0;
@@ -112,15 +114,19 @@ export const Dashboard: React.FC<{
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-dark border-none text-brand-light text-xs font-semibold">
-                Welcome
+                {hasLearningActivity ? 'Welcome Back' : 'Welcome'}
               </span>
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-bold text-brand-light tracking-tight">
-              Ready to grow your financial IQ today?
+              {hasLearningActivity
+                ? 'Ready to grow your financial IQ today?'
+                : 'Welcome! Start your learning journey with Chapter 1'}
             </h1>
             <p className="text-sm sm:text-sm text-brand-muted max-w-xl">
-              You are on Level {getLevelInfo(user.xp).level} with {user.xp} XP. Master Indian market modules or trade NSE stocks to climb the leaderboard!
+              {hasLearningActivity
+                ? `You are on Level ${getLevelInfo(user.xp).level} with ${user.xp} XP across ${masteredCount} mastered concept(s). Master Indian market modules or trade NSE stocks to climb the leaderboard!`
+                : 'Begin your journey into Indian capital markets with the fundamentals of equity investing and smart portfolio building.'}
             </p>
           </div>
 
@@ -168,31 +174,37 @@ export const Dashboard: React.FC<{
 
       {/* Main Grid: Recommended Concept + Dynamic Mastery Ring */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Recommended Concept Card */}
+        {/* Recommended Concept / Onboarding Card */}
         <div className="lg:col-span-2 bg-brand-card border-none rounded-lg p-6 shadow-xl flex flex-col justify-between relative overflow-hidden group transition-all">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-brand-muted uppercase tracking-wider bg-brand-dark px-3 py-1 rounded-full border-none">
-                Continue Where You Left Off
+              <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
+                hasLearningActivity
+                  ? 'bg-brand-dark text-brand-muted border-none'
+                  : 'bg-brand-orange/10 text-brand-orange border border-brand-orange/30'
+              }`}>
+                {hasLearningActivity ? 'Continue Where You Stopped' : 'Starting Point • Chapter 1'}
               </span>
               <span className="text-xs font-semibold text-brand-muted flex items-center gap-1">
-                <BookOpen className="w-4 h-4 text-brand-muted" /> ~{nextRecommended.estimatedMinutes} min read
+                <BookOpen className="w-4 h-4 text-brand-muted" /> ~{(hasLearningActivity ? nextRecommended : firstModule).estimatedMinutes} min read
               </span>
             </div>
 
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-brand-light">
-                {nextRecommended.title}
+                {(hasLearningActivity ? nextRecommended : firstModule).title}
               </h2>
               <p className="text-sm sm:text-sm text-brand-muted mt-2 leading-relaxed">
-                {nextRecommended.summary}
+                {hasLearningActivity
+                  ? nextRecommended.summary
+                  : 'Welcome! Start your learning journey with Chapter 1. Discover how buying a share makes you a real part-owner of an Indian corporation.'}
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2 pt-2">
-              {nextRecommended.keyTakeaways.slice(0, 2).map((takeaway, idx) => (
-                <div key={idx} className="flex items-center gap-1.5 text-xs text-brand-light bg-brand-dark px-3 py-1.5 rounded-lg border-none">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-brand-muted shrink-0" />
+              {(hasLearningActivity ? nextRecommended : firstModule).keyTakeaways.slice(0, 2).map((takeaway, idx) => (
+                <div key={idx} className="flex items-center gap-2 text-xs text-white font-medium bg-[#1E293B] border border-amber-500/30 px-3.5 py-1.5 rounded-lg shadow-sm">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span>{takeaway}</span>
                 </div>
               ))}
@@ -201,13 +213,13 @@ export const Dashboard: React.FC<{
 
           <div className="pt-6 border-t border-brand-dark mt-6 flex items-center justify-between">
             <span className="text-xs font-bold text-brand-muted flex items-center gap-1">
-              <Award className="w-4 h-4 text-brand-muted" /> Reward: +{nextRecommended.xpReward} XP
+              <Award className="w-4 h-4 text-brand-muted" /> Reward: +{(hasLearningActivity ? nextRecommended : firstModule).xpReward} XP
             </span>
             <button
-              onClick={() => onSelectConcept(nextRecommended.id)}
+              onClick={() => onSelectConcept((hasLearningActivity ? nextRecommended : firstModule).id)}
               className="px-6 py-2.5 rounded-xl bg-brand-orange text-brand-black font-bold text-xs shadow-lg shadow-brand-orange/30 hover:scale-105 transition-all flex items-center gap-2 cursor-pointer"
             >
-              <span>Start Module</span>
+              <span>{hasLearningActivity ? 'Resume Lesson' : 'Start Learning Chapter 1'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -371,11 +383,9 @@ export const Dashboard: React.FC<{
             return (
               <div
                 key={quest.id}
-                className={`bg-brand-card rounded-lg p-5 shadow-lg flex flex-col justify-between relative overflow-hidden transition-all min-h-[220px] ${
-                  quest.isActive
-                    ? 'border-2 border-brand-orange shadow-brand-orange/10'
-                    : 'border border-brand-dark'
-                } ${quest.isUpcoming ? 'opacity-50 select-none' : ''}`}
+                className={`bg-brand-card rounded-lg p-5 shadow-lg flex flex-col justify-between relative overflow-hidden transition-all min-h-[220px] border border-brand-dark hover:border-slate-700 ${
+                  quest.isUpcoming ? 'opacity-50 select-none' : ''
+                }`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">

@@ -129,23 +129,30 @@ const MainContent: React.FC = () => {
         />
 
         <main className={`flex-1 w-full ${activeTab === 'landing' ? 'p-0' : 'px-4 sm:px-6 lg:px-8 pt-3 pb-2'}`}>
-          {activeTab === 'landing' && (
-            <LandingPage
-              onStart={() => {
-                if (isLoggedIn) {
-                  navigateToTab('dashboard');
-                } else {
-                  setIntendedDestination('dashboard');
-                  setIsAuthOpen(true);
-                }
-              }}
-              onOpenAuth={() => {
-                setIntendedDestination('dashboard');
-                setIsAuthOpen(true);
-              }}
-              onNavigate={tab => navigateToTab(tab)}
-            />
-          )}
+          {isAuthLoading && activeTab !== 'landing' ? (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+              <div className="w-10 h-10 border-4 border-brand-orange border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm font-semibold text-brand-muted">Loading your TradeWise progress...</p>
+            </div>
+          ) : (
+            <>
+              {activeTab === 'landing' && (
+                <LandingPage
+                  onStart={() => {
+                    if (isLoggedIn) {
+                      navigateToTab('dashboard');
+                    } else {
+                      setIntendedDestination('dashboard');
+                      setIsAuthOpen(true);
+                    }
+                  }}
+                  onOpenAuth={() => {
+                    setIntendedDestination('dashboard');
+                    setIsAuthOpen(true);
+                  }}
+                  onNavigate={tab => navigateToTab(tab)}
+                />
+              )}
 
           {activeTab === 'dashboard' && (
             <Dashboard
@@ -205,6 +212,8 @@ const MainContent: React.FC = () => {
 
           {activeTab === 'disclaimer' && (
             <DisclaimerPage />
+          )}
+            </>
           )}
         </main>
       </div>
