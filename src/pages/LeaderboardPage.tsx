@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Trophy, Flame, Award, CandlestickChart } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, LabelList, CartesianGrid } from 'recharts';
 import { useApp } from '../context/AppContext';
+import { api } from '../services/api';
 import { getLevelInfo } from '../utils/level';
 import { UserAvatar } from '../components/UserAvatar';
 import { LEADERBOARD_POPULATION, type PopulationLearner } from '../data/leaderboardPopulation';
@@ -19,8 +20,22 @@ const getInitials = (name: string): string => {
 };
 
 export const LeaderboardPage: React.FC = () => {
-  const { user, cashBalance, holdings, stocks, startingBalance } = useApp();
+  const { user, cashBalance, holdings, stocks, startingBalance, refreshDailyQuests } = useApp();
   const [activeLeaderboard, setActiveLeaderboard] = useState<'learning' | 'trading'>('learning');
+  const [serverUsers, setServerUsers] = useState<any[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    api.getLeaderboard(activeLeaderboard).then(data => {
+      if (isMounted && data && Array.isArray(data)) {
+        setServerUsers(data);
+      }
+      refreshDailyQuests().catch(() => {});
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [activeLeaderboard]);
 
   // Real user trading return calculation
   const userTradingReturn = useMemo(() => {
@@ -66,7 +81,22 @@ export const LeaderboardPage: React.FC = () => {
       rank: 0
     };
 
+    // Filter server users to avoid duplicate self
+    const validServerUsers: LeaderboardItem[] = serverUsers
+      .filter(u => u.name !== user.name && u.handle !== user.handle && (!user.id || u.id !== user.id))
+      .map(u => ({
+        name: u.name || 'TradeWise Learner',
+        institution: u.institution || 'TradeWise Learner',
+        xp: Number(u.xp) || 0,
+        portfolioReturn: Number(u.portfolioReturn) || 0,
+        streak: Number(u.streak) || 0,
+        level: u.level || getLevelInfo(Number(u.xp) || 0).level,
+        isCurrentUser: false,
+        rank: 0
+      }));
+
     const combined: LeaderboardItem[] = [
+      ...validServerUsers,
       ...LEADERBOARD_POPULATION.map(p => ({ ...p, isCurrentUser: false, rank: 0 })),
       userItem
     ];

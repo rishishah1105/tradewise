@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Compass, CandlestickChart, Award, Flame, ArrowRight, CheckCircle2, TrendingUp, BookOpen, Target, Calendar, RotateCw } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Compass, CandlestickChart, Award, Flame, ArrowRight, CheckCircle2, TrendingUp, BookOpen, Target, Calendar, RotateCw, Trophy } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { MODULES_DATA } from '../data/modulesData';
 import { getLevelInfo } from '../utils/level';
@@ -10,18 +10,22 @@ export const Dashboard: React.FC<{
   onSelectConcept: (conceptId: string) => void;
   onNavigate: (tab: string) => void;
 }> = ({ onSelectConcept, onNavigate }) => {
-  const { user, masteredConceptIds, cashBalance, holdings, stocks, dailyQuestState, activeQuestConfig, formatMoney, claimDailyStreak } = useApp();
+  const {
+    user,
+    masteredConceptIds,
+    cashBalance,
+    holdings,
+    stocks,
+    formatMoney,
+    claimDailyStreak,
+    quests,
+    claimQuest,
+    isClaimingQuest,
+    refreshDailyQuests,
+  } = useApp();
 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [flippedQuestIds, setFlippedQuestIds] = useState<Record<string, boolean>>({});
   const calendarRef = useRef<HTMLDivElement>(null);
-
-  const toggleQuestFlip = (questId: string) => {
-    setFlippedQuestIds(prev => ({
-      ...prev,
-      [questId]: !prev[questId]
-    }));
-  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -64,45 +68,83 @@ export const Dashboard: React.FC<{
   const totalPnL = holdingsValue - totalCost;
   const pnlPercent = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0;
 
-  // 3 Quest tiles for Carousel
-  const questTiles = [
-    {
-      id: 'quest-checkin',
-      title: 'Daily Streak Bonus',
-      description: 'Maintain your momentum and claim daily streak rewards',
-      reward: 50,
-      progress: isStreakClaimed ? 1 : 0,
-      target: 1,
-      isCompleted: isStreakClaimed,
-      isActive: false,
-      isUpcoming: false,
-      icon: Flame,
-    },
-    {
-      id: activeQuestConfig.id,
-      title: activeQuestConfig.title,
-      description: 'Today\'s featured financial challenge to boost market skills',
-      reward: activeQuestConfig.reward,
-      progress: dailyQuestState.progress,
-      target: activeQuestConfig.target,
-      isCompleted: dailyQuestState.completed,
-      isActive: true,
-      isUpcoming: false,
-      icon: Target,
-    },
-    {
-      id: 'quest-upcoming',
-      title: 'NSE Simulator Mastery',
-      description: 'Execute paper orders to practice real-world risk management',
-      reward: 40,
-      progress: 0,
-      target: 3,
-      isCompleted: false,
-      isActive: false,
-      isUpcoming: true,
-      icon: CandlestickChart,
-    },
-  ];
+  useEffect(() => {
+    refreshDailyQuests().catch(() => {});
+  }, []);
+
+  const displayQuests = useMemo(() => {
+    if (quests && quests.length > 0) {
+      return quests;
+    }
+    return [
+      {
+        id: 'quest-first-trade',
+        title: 'Make your first trade',
+        description: 'Execute a paper order in the simulator to practice real-world risk management',
+        category: 'trading',
+        progress: 0,
+        target: 1,
+        completed: false,
+        claimed: false,
+        xpReward: 50,
+      },
+      {
+        id: 'quest-trade-mastery',
+        title: 'NSE Simulator Mastery',
+        description: 'Execute 3 paper orders today to master execution flow',
+        category: 'trading',
+        progress: 0,
+        target: 3,
+        completed: false,
+        claimed: false,
+        xpReward: 40,
+      },
+      {
+        id: 'quest-study',
+        title: 'Complete 1 Study Module',
+        description: 'Complete a concept study module or quiz with a passing score',
+        category: 'learning',
+        progress: 0,
+        target: 1,
+        completed: false,
+        claimed: false,
+        xpReward: 50,
+      },
+    ];
+  }, [quests]);
+
+  const unclaimedXpAvailable = displayQuests
+    .filter(q => !q.claimed && !q.isClaimed)
+    .reduce((sum, q) => sum + (q.xpReward || q.reward || 0), 0);
+
+  const getQuestIcon = (quest: any) => {
+    if (quest.category === 'trading' || quest.id?.includes('trade') || quest.id?.includes('order')) {
+      return CandlestickChart;
+    }
+    if (quest.category === 'learning' || quest.id?.includes('study') || quest.id?.includes('quiz')) {
+      return BookOpen;
+    }
+    if (quest.id?.includes('leaderboard')) {
+      return Trophy;
+    }
+    if (quest.id?.includes('streak')) {
+      return Flame;
+    }
+    return Target;
+  };
+
+  const getQuestAction = (quest: any) => {
+    if (quest.category === 'trading' || quest.id?.includes('trade') || quest.id?.includes('order')) {
+      return { label: 'Go to Simulator', tab: 'simulator' };
+    }
+    if (quest.category === 'learning' || quest.id?.includes('study') || quest.id?.includes('quiz')) {
+      return { label: 'Start Lesson', tab: 'learn' };
+    }
+    if (quest.id?.includes('leaderboard')) {
+      return { label: 'View Leaderboard', tab: 'leaderboard' };
+    }
+    return { label: 'Go to Simulator', tab: 'simulator' };
+  };
 
   return (
     <div className="w-full space-y-4 pb-2">
@@ -274,7 +316,7 @@ export const Dashboard: React.FC<{
         </div>
       </div>
 
-      {/* Redesigned Daily Quests Section with 3-Card Carousel */}
+      {/* Redesigned Daily Quests Section with Server-Confirmed Lifecycle */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -283,144 +325,124 @@ export const Dashboard: React.FC<{
           </div>
           <span className="px-3 py-1 rounded-full text-xs font-bold bg-brand-dark border border-brand-orange/30 text-brand-orange shadow-sm flex items-center gap-1.5">
             <Award className="w-3.5 h-3.5 text-brand-orange" />
-            +{activeQuestConfig.reward} XP Available
+            {unclaimedXpAvailable > 0 ? `+${unclaimedXpAvailable} XP Available` : 'All Claimed Today ✓'}
           </span>
         </div>
 
-        {/* 3 Quest Cards Horizontal Carousel / Grid */}
+        {/* Quest Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {questTiles.map(quest => {
-            const Icon = quest.icon;
-            const progressPercent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
-            const isFlipped = Boolean(flippedQuestIds[quest.id]);
+          {displayQuests.map(quest => {
+            const Icon = getQuestIcon(quest);
+            const action = getQuestAction(quest);
+            const isClaimed = Boolean(quest.claimed || quest.isClaimed);
+            const isCompleted = Boolean(quest.completed || quest.isCompleted);
+            const isReadyToClaim = isCompleted && !isClaimed;
+            const isClaiming = isClaimingQuest(quest.id);
+            const progress = quest.progress ?? quest.current ?? 0;
+            const target = quest.target || 1;
+            const reward = quest.xpReward ?? quest.reward ?? 50;
+            const progressPercent = Math.min(100, Math.round((progress / target) * 100));
 
-            // Case 1: Completed Quest with Interactive 3D Flip
-            if (quest.isCompleted) {
-              return (
-                <div
-                  key={quest.id}
-                  onClick={() => toggleQuestFlip(quest.id)}
-                  title="Click to flip card"
-                  className="perspective-1000 min-h-[220px] cursor-pointer select-none group"
-                >
-                  <div
-                    className={`relative w-full h-full transition-transform duration-500 transform-style-3d rounded-lg ${
-                      isFlipped ? 'rotate-y-180' : ''
-                    }`}
-                  >
-                    {/* Front Face: Celebratory Completed State */}
-                    <div className="absolute inset-0 backface-hidden bg-brand-card border border-emerald-500/30 rounded-lg p-5 shadow-lg flex flex-col justify-between overflow-hidden">
-                      <div className="flex items-center justify-between text-[11px] font-bold">
-                        <span className="flex items-center gap-1.5 text-emerald-400 uppercase tracking-wider">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Completed
-                        </span>
-                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px]">
-                          +{quest.reward} XP
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col items-center justify-center my-auto py-2 text-center">
-                        <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-2 shadow-sm group-hover:scale-110 transition-transform">
-                          <CheckCircle2 className="w-6 h-6" />
-                        </div>
-                        <h4 className="font-bold text-sm text-brand-light line-clamp-1">
-                          {quest.title}
-                        </h4>
-                        <span className="text-xs text-brand-muted mt-1">Goal achieved · 100% complete</span>
-                      </div>
-
-                      <div className="pt-2 border-t border-brand-dark/50 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-emerald-400/90 group-hover:text-emerald-300 transition-colors">
-                        <RotateCw className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
-                        <span>Click to see quest details</span>
-                      </div>
-                    </div>
-
-                    {/* Back Face: Original Quest Details (Revealed on flip) */}
-                    <div className="absolute inset-0 backface-hidden rotate-y-180 bg-brand-card border border-brand-dark rounded-lg p-5 shadow-lg flex flex-col justify-between overflow-hidden">
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="w-9 h-9 rounded-lg bg-brand-dark flex items-center justify-center text-brand-orange">
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                              Completed ✓
-                            </span>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-dark text-brand-orange border border-brand-orange/20">
-                              +{quest.reward} XP
-                            </span>
-                          </div>
-                        </div>
-
-                        <h4 className="font-bold text-sm text-brand-light leading-snug mb-1">
-                          {quest.title}
-                        </h4>
-                        <p className="text-xs text-brand-muted leading-relaxed mb-2">
-                          {quest.description}
-                        </p>
-                      </div>
-
-                      <div className="space-y-1.5 pt-2 border-t border-brand-dark/50">
-                        <div className="flex items-center justify-between text-[11px] font-mono">
-                          <span className="text-emerald-400 font-semibold">
-                            Goal reached ({quest.progress}/{quest.target})
-                          </span>
-                          <span className="flex items-center gap-1 text-slate-400 text-[10px] hover:text-white">
-                            <RotateCw className="w-3 h-3" /> Flip back
-                          </span>
-                        </div>
-                        <div className="h-1.5 w-full bg-brand-dark rounded-full overflow-hidden">
-                          <div style={{ width: '100%' }} className="h-full rounded-full bg-emerald-500" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            // Case 2: Active or Upcoming Quest (Normal tile)
             return (
               <div
                 key={quest.id}
-                className={`bg-brand-card rounded-lg p-5 shadow-lg flex flex-col justify-between relative overflow-hidden transition-all min-h-[220px] border border-brand-dark hover:border-slate-700 ${
-                  quest.isUpcoming ? 'opacity-50 select-none' : ''
+                className={`bg-brand-card rounded-lg p-5 shadow-lg flex flex-col justify-between relative overflow-hidden transition-all min-h-[220px] ${
+                  isClaimed
+                    ? 'border border-emerald-500/30'
+                    : isReadyToClaim
+                    ? 'border-2 border-brand-orange shadow-brand-orange/10'
+                    : 'border border-brand-dark hover:border-slate-700'
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-lg bg-brand-dark flex items-center justify-center text-brand-orange">
-                      <Icon className="w-5 h-5" />
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      isClaimed
+                        ? 'bg-emerald-500/10 text-emerald-400'
+                        : isReadyToClaim
+                        ? 'bg-brand-orange/20 text-brand-orange'
+                        : 'bg-brand-dark text-brand-orange'
+                    }`}>
+                      {isClaimed ? <CheckCircle2 className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
                     </div>
-                    <span className="px-2.5 py-1 rounded text-[11px] font-bold bg-brand-dark text-brand-orange border border-brand-orange/20">
-                      +{quest.reward} XP
-                    </span>
+                    {isClaimed ? (
+                      <span className="px-2.5 py-1 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Claimed
+                      </span>
+                    ) : isReadyToClaim ? (
+                      <span className="px-2.5 py-1 rounded text-[11px] font-bold bg-brand-orange/20 text-brand-orange border border-brand-orange/40 animate-pulse">
+                        +{reward} XP Ready!
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded text-[11px] font-bold bg-brand-dark text-brand-orange border border-brand-orange/20">
+                        +{reward} XP
+                      </span>
+                    )}
                   </div>
 
                   <h4 className="font-bold text-sm text-brand-light leading-snug mb-1">
                     {quest.title}
                   </h4>
-                  <p className="text-xs text-brand-muted leading-relaxed mb-4">
+                  <p className="text-xs text-brand-muted leading-relaxed mb-4 line-clamp-2">
                     {quest.description}
                   </p>
                 </div>
 
-                {/* Progress Indicator */}
-                <div className="space-y-1.5 pt-2 border-t border-brand-dark/50">
-                  <div className="flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-brand-muted">
-                      {quest.isUpcoming ? 'Locked until tomorrow' : 'Progress'}
-                    </span>
-                    <strong className="text-brand-light font-bold">
-                      {quest.progress} / {quest.target}
-                    </strong>
+                <div className="space-y-3 pt-2 border-t border-brand-dark/50">
+                  {/* Progress Indicator */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-mono">
+                      <span className={isClaimed ? 'text-emerald-400 font-semibold' : 'text-brand-muted'}>
+                        {isClaimed ? 'Completed & Claimed' : isReadyToClaim ? 'Goal Reached!' : 'Progress'}
+                      </span>
+                      <strong className={`font-bold ${isClaimed ? 'text-emerald-400' : 'text-brand-light'}`}>
+                        {progress} / {target}
+                      </strong>
+                    </div>
+                    <div className="h-1.5 w-full bg-brand-dark rounded-full overflow-hidden">
+                      <div
+                        style={{ width: `${isClaimed || isCompleted ? 100 : progressPercent}%` }}
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          isClaimed ? 'bg-emerald-500' : isReadyToClaim ? 'bg-brand-orange' : 'bg-brand-orange'
+                        }`}
+                      />
+                    </div>
                   </div>
-                  <div className="h-1.5 w-full bg-brand-dark rounded-full overflow-hidden">
-                    <div
-                      style={{ width: `${progressPercent}%` }}
-                      className="h-full rounded-full transition-all duration-500 bg-brand-orange"
-                    />
-                  </div>
+
+                  {/* Dynamic Action Button based on Server-Confirmed State */}
+                  {isClaimed ? (
+                    <div className="w-full py-2 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Claimed today (+{reward} XP)</span>
+                    </div>
+                  ) : isReadyToClaim ? (
+                    <button
+                      id={`claim-quest-${quest.id}`}
+                      onClick={() => claimQuest(quest.id)}
+                      disabled={isClaiming}
+                      className="w-full py-2 px-3 rounded-lg bg-brand-orange hover:bg-brand-orange/90 text-brand-black font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-brand-orange/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                    >
+                      {isClaiming ? (
+                        <>
+                          <RotateCw className="w-3.5 h-3.5 animate-spin" />
+                          <span>Claiming Reward...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Award className="w-3.5 h-3.5" />
+                          <span>Claim +{reward} XP</span>
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onNavigate(action.tab)}
+                      className="w-full py-2 px-3 rounded-lg bg-brand-dark hover:bg-brand-dark/80 text-brand-light text-xs font-semibold flex items-center justify-between border border-white/5 transition-all group/btn cursor-pointer"
+                    >
+                      <span className="text-brand-muted group-hover/btn:text-brand-light transition-colors">{action.label}</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-brand-muted group-hover/btn:text-brand-orange group-hover/btn:translate-x-0.5 transition-all" />
+                    </button>
+                  )}
                 </div>
               </div>
             );

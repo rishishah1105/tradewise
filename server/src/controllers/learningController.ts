@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../prisma.js';
 import { resolveUserId } from '../middleware/authMiddleware.js';
+import { rewardService } from '../services/rewardService.js';
 
 const XP_PER_LEVEL = 300;
 const calculateLevel = (xp: number) => Math.floor(Math.max(0, xp) / XP_PER_LEVEL) + 1;
@@ -66,10 +67,20 @@ export const completeQuiz = async (req: Request, res: Response) => {
           newBadgesUnlocked.push('quiz-perfectionist');
         }
 
-        // 4. Update user XP, Level, and mark onboardingCompleted
+        // 4. Update user XP, Level, and mark onboardingCompleted via centralized rewardService
+        if (earnedXP > 0) {
+          await rewardService.awardXp(
+            targetUserId,
+            earnedXP,
+            'QUIZ',
+            conceptId,
+            `Completed concept quiz: ${conceptId} (${scorePercent}%)`,
+            tx
+          );
+        }
         await tx.user.update({
           where: { id: targetUserId },
-          data: { xp: newXP, level: newLevel, onboardingCompleted: true },
+          data: { onboardingCompleted: true },
         });
 
         // 5. Record activity log entry for calendar & activity persistence
@@ -81,6 +92,12 @@ export const completeQuiz = async (req: Request, res: Response) => {
         });
       }
     });
+
+    if (isPassed) {
+      await rewardService.recordQuestProgress(targetUserId, 'LEARN', 1, {
+        isPerfectScore: scorePercent === 100,
+      });
+    }
 
     res.json({
       success: true,

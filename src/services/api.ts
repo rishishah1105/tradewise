@@ -214,10 +214,61 @@ export const api = {
     return false;
   },
 
+  // Daily Quests & Rewards
+  async getDailyQuests(dateKey?: string) {
+    try {
+      const url = dateKey ? `${API_BASE_URL}/quests?dateKey=${encodeURIComponent(dateKey)}` : `${API_BASE_URL}/quests`;
+      const res = await fetch(url, {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch (err) {
+      console.warn('[API] getDailyQuests error:', err);
+    }
+    return null;
+  },
+
+  async claimQuest(questId: string, dateKey?: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/quests/${encodeURIComponent(questId)}/claim`, {
+        method: 'POST',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
+        body: JSON.stringify({ questId, dateKey }),
+      });
+      return await res.json();
+    } catch (err) {
+      console.warn('[API] claimQuest error:', err);
+      return { success: false, message: 'Server communication error' };
+    }
+  },
+
+  async recordQuestAction(actionType: string, amount = 1) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/quests/action`, {
+        method: 'POST',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
+        body: JSON.stringify({ actionType, amount }),
+      });
+      return await res.json();
+    } catch (err) {
+      console.warn('[API] recordQuestAction error:', err);
+      return { success: false };
+    }
+  },
+
   // Portfolio
   async getPortfolio() {
     try {
-      const res = await fetch(`${API_BASE_URL}/portfolio`);
+      const res = await fetch(`${API_BASE_URL}/portfolio`, {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
       if (res.ok) {
         const json = await res.json();
         return json.data;
@@ -239,7 +290,8 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/portfolio/order`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify(orderData),
       });
       const json = await res.json();
@@ -254,7 +306,8 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/portfolio/order/cancel`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify({ orderId }),
       });
       return await res.json();
@@ -302,7 +355,10 @@ export const api = {
   // Leaderboard
   async getLeaderboard(type: 'learning' | 'trading') {
     try {
-      const res = await fetch(`${API_BASE_URL}/leaderboard?type=${type}`);
+      const res = await fetch(`${API_BASE_URL}/leaderboard?type=${type}`, {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
       if (res.ok) {
         const json = await res.json();
         return json.data;
@@ -320,7 +376,8 @@ export const api = {
   async getPaperAccount(userId?: string) {
     try {
       const res = await fetch(`${API_BASE_URL}/paper-trading/account`, {
-        headers: userId ? { 'x-user-id': userId } : undefined,
+        headers: getAuthHeaders(userId ? { 'x-user-id': userId } : {}),
+        credentials: 'include',
       });
       if (res.ok) {
         const json = await res.json();
@@ -335,7 +392,8 @@ export const api = {
   async getPaperPortfolio(userId?: string) {
     try {
       const res = await fetch(`${API_BASE_URL}/paper-trading/portfolio`, {
-        headers: userId ? { 'x-user-id': userId } : undefined,
+        headers: getAuthHeaders(userId ? { 'x-user-id': userId } : {}),
+        credentials: 'include',
       });
       if (res.ok) {
         const json = await res.json();
@@ -351,10 +409,11 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/paper-trading/reset`, {
         method: 'POST',
-        headers: {
+        headers: getAuthHeaders({
           'Content-Type': 'application/json',
           ...(userId ? { 'x-user-id': userId } : {}),
-        },
+        }),
+        credentials: 'include',
         body: JSON.stringify({ confirm: true, reason }),
       });
       return await res.json();
@@ -377,10 +436,11 @@ export const api = {
       const { userId, ...body } = orderData;
       const res = await fetch(`${API_BASE_URL}/paper-trading/orders`, {
         method: 'POST',
-        headers: {
+        headers: getAuthHeaders({
           'Content-Type': 'application/json',
           ...(userId ? { 'x-user-id': userId } : {}),
-        },
+        }),
+        credentials: 'include',
         body: JSON.stringify(body),
       });
       return await res.json();
@@ -394,10 +454,11 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/paper-trading/orders/${orderId}/cancel`, {
         method: 'POST',
-        headers: {
+        headers: getAuthHeaders({
           'Content-Type': 'application/json',
           ...(userId ? { 'x-user-id': userId } : {}),
-        },
+        }),
+        credentials: 'include',
       });
       return await res.json();
     } catch (err) {
@@ -409,7 +470,8 @@ export const api = {
   async getPaperTransactions(userId?: string) {
     try {
       const res = await fetch(`${API_BASE_URL}/paper-trading/transactions`, {
-        headers: userId ? { 'x-user-id': userId } : undefined,
+        headers: getAuthHeaders(userId ? { 'x-user-id': userId } : {}),
+        credentials: 'include',
       });
       if (res.ok) {
         const json = await res.json();
@@ -424,7 +486,8 @@ export const api = {
   async getWatchlist(userId?: string) {
     try {
       const res = await fetch(`${API_BASE_URL}/paper-trading/watchlist`, {
-        headers: userId ? { 'x-user-id': userId } : undefined,
+        headers: getAuthHeaders(userId ? { 'x-user-id': userId } : {}),
+        credentials: 'include',
       });
       if (res.ok) {
         const json = await res.json();
@@ -440,10 +503,11 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/paper-trading/watchlist`, {
         method: 'POST',
-        headers: {
+        headers: getAuthHeaders({
           'Content-Type': 'application/json',
           ...(userId ? { 'x-user-id': userId } : {}),
-        },
+        }),
+        credentials: 'include',
         body: JSON.stringify({ symbol, name }),
       });
       return await res.json();
@@ -457,7 +521,8 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/paper-trading/watchlist/${encodeURIComponent(idOrSymbol)}`, {
         method: 'DELETE',
-        headers: userId ? { 'x-user-id': userId } : undefined,
+        headers: getAuthHeaders(userId ? { 'x-user-id': userId } : {}),
+        credentials: 'include',
       });
       return await res.json();
     } catch (err) {
@@ -469,7 +534,8 @@ export const api = {
   async getPaperChallenges(userId?: string) {
     try {
       const res = await fetch(`${API_BASE_URL}/paper-trading/challenges`, {
-        headers: userId ? { 'x-user-id': userId } : undefined,
+        headers: getAuthHeaders(userId ? { 'x-user-id': userId } : {}),
+        credentials: 'include',
       });
       if (res.ok) {
         const json = await res.json();

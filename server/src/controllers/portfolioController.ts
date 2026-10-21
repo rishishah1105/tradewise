@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../prisma.js';
 import { resolveUserId } from '../middleware/authMiddleware.js';
+import { rewardService } from '../services/rewardService.js';
 
 export const getPortfolio = async (req: Request, res: Response) => {
   try {
@@ -137,9 +138,13 @@ export const placeOrder = async (req: Request, res: Response) => {
         });
       });
 
+      // Update daily trading quests
+      const questUpdates = await rewardService.recordQuestProgress(user.id, 'TRADE', 1, { isLimit: false });
+
       res.json({
         success: true,
         message: `Executed MARKET ${side} for ${shares} shares of ${symbol} at ₹${execPrice.toFixed(2)}`,
+        questUpdates,
       });
       return;
     }
@@ -157,10 +162,14 @@ export const placeOrder = async (req: Request, res: Response) => {
       },
     });
 
+    // Update daily limit order & trading quests
+    const questUpdates = await rewardService.recordQuestProgress(user.id, 'LIMIT_ORDER', 1, { isLimit: true });
+
     res.json({
       success: true,
       message: `Limit order placed for ${shares} shares of ${symbol} at target ₹${limitPrice.toFixed(2)}`,
       data: newOrder,
+      questUpdates,
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Database error' });

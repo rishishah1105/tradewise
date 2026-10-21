@@ -6,6 +6,7 @@
 
 import { prisma } from '../prisma.js';
 import { eulerpoolService, type NormalizedQuote } from './eulerpoolService.js';
+import { rewardService } from './rewardService.js';
 
 // Configuration
 const DEFAULT_INITIAL_CASH = 100000.0;
@@ -250,8 +251,9 @@ export class PaperExecutionEngine {
     }
 
     // 6. Handle MARKET Orders
+    let result: ExecutionResult;
     if (type === 'MARKET') {
-      return this.executeMarketOrder({
+      result = await this.executeMarketOrder({
         account,
         activeEpisode,
         quote,
@@ -259,18 +261,29 @@ export class PaperExecutionEngine {
         quantity,
         clientOrderId,
       });
+    } else {
+      // 7. Handle LIMIT Orders
+      result = await this.queueLimitOrder({
+        account,
+        activeEpisode,
+        quote,
+        side,
+        quantity,
+        limitPrice: limitPrice!,
+        clientOrderId,
+      });
     }
 
-    // 7. Handle LIMIT Orders
-    return this.queueLimitOrder({
-      account,
-      activeEpisode,
-      quote,
-      side,
-      quantity,
-      limitPrice: limitPrice!,
-      clientOrderId,
-    });
+    if (result.success) {
+      await rewardService.recordQuestProgress(
+        userId,
+        type === 'LIMIT' ? 'LIMIT_ORDER' : 'TRADE',
+        1,
+        { isLimit: type === 'LIMIT' }
+      );
+    }
+
+    return result;
   }
 
   /**

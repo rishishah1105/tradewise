@@ -1,9 +1,20 @@
 import { Request, Response } from 'express';
 import { prisma } from '../prisma.js';
+import { resolveUserId } from '../middleware/authMiddleware.js';
+import { rewardService } from '../services/rewardService.js';
 
 export const getLeaderboard = async (req: Request, res: Response) => {
   try {
     const { type = 'learning' } = req.query; // 'learning' | 'trading'
+
+    // If authenticated user visits leaderboard, record quest progress in background
+    resolveUserId(req)
+      .then(userId => {
+        if (userId) {
+          rewardService.recordQuestProgress(userId, 'LEADERBOARD', 1).catch(() => {});
+        }
+      })
+      .catch(() => {});
 
     const users = await prisma.user.findMany({
       select: {

@@ -21,6 +21,7 @@ import {
 } from '../controllers/portfolioController.js';
 import { completeQuiz, getLearningProgress } from '../controllers/learningController.js';
 import { getLeaderboard } from '../controllers/leaderboardController.js';
+import { getDailyQuests, claimQuest, recordQuestAction } from '../controllers/questController.js';
 import { paperTradingRouter } from './paperTradingRoutes.js';
 
 export const apiRouter = Router();
@@ -44,6 +45,12 @@ apiRouter.put('/user/profile', updateProfile);
 apiRouter.post('/user/activity', logActivity);
 apiRouter.post('/user/streak', claimDailyStreak);
 apiRouter.post('/user/reset', resetAllProgress);
+
+// Daily Quests & Rewards
+apiRouter.get('/quests', getDailyQuests);
+apiRouter.post('/quests/:id/claim', claimQuest);
+apiRouter.post('/quests/claim', claimQuest);
+apiRouter.post('/quests/action', recordQuestAction);
 
 // Portfolio & Trading (Backward compatible Phase 1 & 2 routes)
 apiRouter.get('/portfolio', getPortfolio);

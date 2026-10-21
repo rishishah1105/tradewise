@@ -88,11 +88,12 @@ export const handleGoogleCallback = async (req: Request, res: Response) => {
       path: '/',
     });
 
-    // Redirect to authenticated app experience with success indicator
-    res.redirect(`${clientOrigin}/#${encodeURIComponent(destination)}?auth_success=true`);
+    // Redirect to authenticated app experience with success indicator and session token
+    res.redirect(`${clientOrigin}/#${encodeURIComponent(destination)}?auth_success=true&token=${encodeURIComponent(token)}`);
   } catch (err) {
     console.error('[AuthController] handleGoogleCallback error:', err);
-    res.redirect(`${clientOrigin}/#landing?auth_error=verification_failed`);
+    const errMessage = err instanceof Error ? encodeURIComponent(err.message) : 'verification_failed';
+    res.redirect(`${clientOrigin}/#landing?auth_error=${errMessage}`);
   }
 };
 

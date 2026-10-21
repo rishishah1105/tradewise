@@ -7,6 +7,7 @@ import { toDateKey } from '../utils/dateKeys';
 import { api, checkBackendHealth } from '../services/api';
 
 export interface UserProfile {
+  id?: string;
   name: string;
   email?: string;
   xp: number;
@@ -47,10 +48,18 @@ export interface DailyQuestState {
 export interface DailyQuest {
   id: string;
   title: string;
+  description?: string;
+  category?: string;
   target: number;
-  current: number;
+  current?: number;
+  progress?: number;
   completed: boolean;
+  claimed?: boolean;
+  claimedAt?: string | null;
+  isCompleted?: boolean;
+  isClaimed?: boolean;
   xpReward: number;
+  reward?: number;
 }
 
 export interface PortfolioHolding {
@@ -114,6 +123,8 @@ interface AppContextType {
   activeQuestConfig: typeof DAILY_QUEST_POOL[0];
   updateDailyQuestProgress: (actionId: string, amount?: number) => void;
   quests: DailyQuest[];
+  refreshDailyQuests: () => Promise<void>;
+  isClaimingQuest: (questId: string) => boolean;
   toasts: ToastMessage[];
   
   // Helpers & Formatter
@@ -281,33 +292,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const safeStreak = remote.streak !== undefined ? Number(remote.streak) : 0;
     const safeLevel = remote.level !== undefined ? Number(remote.level) : getLevelInfo(safeXp).level;
 
-    setUser(prev => ({
-      ...prev,
+    setUser({
+      id: remote.id || undefined,
       name: remote.name || 'TradeWise Learner',
-      email: remote.email || prev.email,
-      handle: remote.handle || prev.handle,
-      bio: remote.bio || prev.bio,
-      institution: remote.institution || prev.institution,
-      city: remote.city || prev.city,
-      experienceLevel: remote.experienceLevel || prev.experienceLevel,
-      avatarUrl: remote.avatarUrl || prev.avatarUrl,
-      avatarColor: remote.avatarColor || prev.avatarColor,
+      email: remote.email || undefined,
+      handle: remote.handle || undefined,
+      bio: remote.bio || undefined,
+      institution: remote.institution || undefined,
+      city: remote.city || undefined,
+      experienceLevel: remote.experienceLevel || undefined,
+      avatarUrl: remote.avatarUrl || undefined,
+      avatarColor: remote.avatarColor || undefined,
       xp: safeXp,
       level: safeLevel,
       streak: safeStreak,
-      lastCheckInDate: remote.lastCheckInDate || prev.lastCheckInDate || '',
+      lastCheckInDate: remote.lastCheckInDate || '',
+      streakFreezeAvailable: remote.streakFreezeAvailable ?? true,
+      currency: 'INR',
       activityLog: Array.isArray(remote.activityLogs)
         ? remote.activityLogs.reduce((acc: Record<string, number>, curr: { dateKey: string; count: number }) => {
             acc[curr.dateKey] = curr.count;
             return acc;
           }, {})
-        : prev.activityLog || {},
+        : {},
+      joinedAt: remote.createdAt ? toDateKey(new Date(remote.createdAt)) : toDateKey(),
       links: {
-        linkedin: remote.linkedin || prev.links?.linkedin,
-        github: remote.github || prev.links?.github,
-        twitter: remote.twitter || prev.links?.twitter,
+        linkedin: remote.linkedin || undefined,
+        github: remote.github || undefined,
+        twitter: remote.twitter || undefined,
       }
-    }));
+    });
 
     // Restore mastered concepts faithfully from verified database records
     if (Array.isArray(remote.masteredConcepts)) {
@@ -395,6 +409,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const hashParams = new URLSearchParams(window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '');
       const authSuccess = urlParams.get('auth_success') === 'true' || hashParams.get('auth_success') === 'true';
       const authError = urlParams.get('auth_error') || hashParams.get('auth_error');
+      const token = urlParams.get('token') || hashParams.get('token');
+
+      if (token) {
+        localStorage.setItem('tradewise_session_token', token);
+      }
 
       if (authSuccess) {
         addToast('Signed In Successfully!', 'Your Google session is active.', 'info');
@@ -402,7 +421,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const cleanHash = window.location.hash.split('?')[0] || '#dashboard';
         window.history.replaceState({}, document.title, window.location.pathname + cleanHash);
       } else if (authError) {
-        addToast('Authentication Failed', 'Google login could not be completed. Please try again.', 'info');
+        addToast('Authentication Failed', `Google login could not be completed (${decodeURIComponent(authError)}).`, 'info');
         const cleanHash = window.location.hash.split('?')[0] || '#landing';
         window.history.replaceState({}, document.title, window.location.pathname + cleanHash);
       }
@@ -418,6 +437,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           if (session?.authenticated && session.data) {
             applyRemoteUserData(session.data);
             setIsLoggedIn(true);
+            refreshDailyQuests();
           } else {
             // Server explicitly rejected or found no valid session
             localStorage.removeItem('tradewise_session_token');
@@ -446,6 +466,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (remote) {
         applyRemoteUserData(remote);
         setIsLoggedIn(true);
+        refreshDailyQuests().catch(() => {});
         confetti({
           particleCount: 80,
           spread: 70,
@@ -655,6 +676,35 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const saved = localStorage.getItem('tradewise_quests');
     return saved ? JSON.parse(saved) : INITIAL_QUESTS;
   });
+
+  const [claimingQuestIds, setClaimingQuestIds] = useState<Record<string, boolean>>({});
+  const isClaimingQuest = (questId: string) => Boolean(claimingQuestIds[questId]);
+
+  const refreshDailyQuests = async () => {
+    try {
+      const res = await api.getDailyQuests();
+      if (res?.quests && Array.isArray(res.quests)) {
+        setQuests(res.quests.map((q: any) => ({
+          id: q.id,
+          title: q.title,
+          description: q.description,
+          category: q.category,
+          target: q.target,
+          current: q.progress,
+          progress: q.progress,
+          completed: q.completed,
+          claimed: q.claimed,
+          claimedAt: q.claimedAt,
+          isCompleted: q.completed,
+          isClaimed: q.claimed,
+          xpReward: q.xpReward,
+          reward: q.xpReward,
+        })));
+      }
+    } catch (err) {
+      console.warn('[Quests] refreshDailyQuests error:', err);
+    }
+  };
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -997,23 +1047,80 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const updateQuestProgress = (questId: string, progress: number) => {
     setQuests(prev => prev.map(q => {
       if (q.id === questId && !q.completed) {
-        const nextVal = Math.min(q.target, q.current + progress);
-        return { ...q, current: nextVal };
+        const cur = q.progress ?? q.current ?? 0;
+        const nextVal = Math.min(q.target, cur + progress);
+        const isCompleted = nextVal >= q.target;
+        return {
+          ...q,
+          current: nextVal,
+          progress: nextVal,
+          completed: isCompleted,
+          isCompleted,
+        };
       }
       return q;
     }));
   };
 
-  const claimQuest = (questId: string) => {
-    const q = quests.find(item => item.id === questId);
-    if (q && q.current >= q.target && !q.completed) {
-      setQuests(prev => prev.map(item => item.id === questId ? { ...item, completed: true } : item));
-      setUser(prev => {
-        const newXP = prev.xp + q.xpReward;
-        return { ...prev, xp: newXP, level: getLevelInfo(newXP).level };
-      });
-      addToast('Daily Quest Claimed! 🎯', `+${q.xpReward} XP for completing: ${q.title}`, 'xp');
-      confetti({ particleCount: 60, spread: 50, origin: { y: 0.6 } });
+  const advanceTradeQuests = async (isLimit = false) => {
+    setQuests(prev => prev.map(q => {
+      const isTradeQuest = q.id === 'quest-first-trade' || q.id === 'quest-trade-mastery' || q.id === 'q-trade-3' || (isLimit && q.id === 'q-limit-order');
+      if (isTradeQuest && !q.completed) {
+        const cur = q.progress ?? q.current ?? 0;
+        const nextVal = Math.min(q.target, cur + 1);
+        const isCompleted = nextVal >= q.target;
+        return {
+          ...q,
+          current: nextVal,
+          progress: nextVal,
+          completed: isCompleted,
+          isCompleted,
+        };
+      }
+      return q;
+    }));
+
+    try {
+      await api.recordQuestAction(isLimit ? 'LIMIT_ORDER' : 'TRADE', 1);
+      await refreshDailyQuests();
+    } catch (err) {
+      console.warn('[Quests] advanceTradeQuests error:', err);
+    }
+  };
+
+  const claimQuest = async (questId: string) => {
+    if (claimingQuestIds[questId]) return;
+
+    setClaimingQuestIds(prev => ({ ...prev, [questId]: true }));
+    try {
+      const res = await api.claimQuest(questId);
+      if (res && res.success) {
+        if (res.newTotalXp !== undefined) {
+          setUser(prev => ({
+            ...prev,
+            xp: res.newTotalXp,
+            level: res.newLevel || getLevelInfo(res.newTotalXp).level,
+          }));
+        }
+        setQuests(prev => prev.map(item =>
+          item.id === questId ? { ...item, completed: true, claimed: true, isCompleted: true, isClaimed: true } : item
+        ));
+        addToast('Daily Quest Claimed! 🎯', res.message || `+${res.xpAwarded} XP awarded!`, 'xp');
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+        await refreshDailyQuests();
+      } else if (res && res.code === 'ALREADY_CLAIMED') {
+        setQuests(prev => prev.map(item =>
+          item.id === questId ? { ...item, completed: true, claimed: true, isCompleted: true, isClaimed: true } : item
+        ));
+        addToast('Already Claimed', res.message || 'This quest has already been claimed today.', 'info');
+      } else {
+        addToast('Claim Failed', res?.message || 'Could not claim quest. Please try again.', 'info');
+      }
+    } catch (err) {
+      console.warn('[Quest] Claim error:', err);
+      addToast('Claim Error', 'A network error occurred while claiming.', 'info');
+    } finally {
+      setClaimingQuestIds(prev => ({ ...prev, [questId]: false }));
     }
   };
 
@@ -1062,7 +1169,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         addToast(`Order Executed! 📈`, `Bought ${shares} shares of ${symbol} @ ${formatMoney(executionPrice)}`, 'trade');
         unlockBadge('first-trade');
         checkDiversifierBadge();
-        updateQuestProgress('quest-2', 1);
+        advanceTradeQuests(false);
 
         // Background sync to PostgreSQL
         api.placeOrder({
@@ -1071,7 +1178,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           type: 'MARKET',
           shares,
           currentPrice: stock.price,
-        }).catch(() => {});
+        }).then(() => refreshDailyQuests()).catch(() => {});
 
         return { success: true, message: `Successfully bought ${shares} shares of ${symbol}!` };
       } else {
@@ -1088,7 +1195,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         };
         setOpenOrders(prev => [order, ...prev]);
         addToast(`Limit Order Placed`, `Buy Limit for ${shares} ${symbol} @ ${formatMoney(limitPrice || stock.price)}`, 'info');
-        updateQuestProgress('quest-2', 1);
+        advanceTradeQuests(true);
 
         // Background sync to PostgreSQL
         api.placeOrder({
@@ -1098,7 +1205,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           shares,
           limitPrice: limitPrice || stock.price,
           currentPrice: stock.price,
-        }).catch(() => {});
+        }).then(() => refreshDailyQuests()).catch(() => {});
 
         return { success: true, message: `Limit order placed for ${shares} shares of ${symbol}!` };
       }
@@ -1137,7 +1244,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         addToast(`Order Executed! 📉`, `Sold ${shares} shares of ${symbol} @ ${formatMoney(executionPrice)}`, 'trade');
         unlockBadge('first-trade');
-        updateQuestProgress('quest-2', 1);
+        advanceTradeQuests(false);
 
         // Background sync to PostgreSQL
         api.placeOrder({
@@ -1146,7 +1253,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           type: 'MARKET',
           shares,
           currentPrice: stock.price,
-        }).catch(() => {});
+        }).then(() => refreshDailyQuests()).catch(() => {});
 
         return { success: true, message: `Successfully sold ${shares} shares of ${symbol}!` };
       } else {
@@ -1219,39 +1326,38 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const claimDailyStreak = async () => {
     const today = toDateKey();
-    if (user.lastCheckInDate === today) return;
-
-    const newStreak = user.streak + 1;
-    const newXP = user.xp + 50;
-    const newLevel = getLevelInfo(newXP).level;
-
-    setUser(prev => ({
-      ...prev,
-      streak: newStreak,
-      xp: newXP,
-      level: newLevel,
-      lastCheckInDate: today,
-    }));
-
-    addToast('Daily Streak Claimed! 🔥', `+50 XP! You're on a ${newStreak}-day streak!`, 'streak');
-    if (newStreak >= 5) {
-      unlockBadge('streak-5');
+    if (user.lastCheckInDate === today) {
+      addToast('Already Claimed', 'You have already claimed your daily streak today.', 'info');
+      return;
     }
 
-    // Confirmed background sync to PostgreSQL
     try {
       const res = await api.claimStreak(today);
-      if (res && res.xp !== undefined) {
+      const u = (res && res.data) ? res.data : res;
+      if (u && u.xp !== undefined) {
         setUser(prev => ({
           ...prev,
-          xp: res.xp,
-          streak: res.streak,
-          level: res.level || getLevelInfo(res.xp).level,
-          lastCheckInDate: res.lastCheckInDate || today,
+          xp: u.xp,
+          streak: u.streak,
+          level: u.level || getLevelInfo(u.xp).level,
+          lastCheckInDate: u.lastCheckInDate || today,
+          activityLog: {
+            ...prev.activityLog,
+            [today]: (prev.activityLog[today] || 0) + 1,
+          },
         }));
+        addToast('Daily Streak Claimed! 🔥', `+50 XP! You're on a ${u.streak}-day streak!`, 'streak');
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+        if (u.streak >= 5) {
+          unlockBadge('streak-5');
+        }
+        await refreshDailyQuests();
+      } else if (res && res.alreadyClaimed) {
+        setUser(prev => ({ ...prev, lastCheckInDate: today }));
+        addToast('Already Claimed', 'Streak has already been claimed today.', 'info');
       }
     } catch (err) {
-      console.warn('[Streak] Sync fallback to local state:', err);
+      console.warn('[Streak] Error claiming streak:', err);
     }
   };
 
@@ -1299,6 +1405,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       tradeLog,
       badges,
       quests,
+      refreshDailyQuests,
+      isClaimingQuest,
       addMockStock,
       dailyQuestState,
       activeQuestConfig,

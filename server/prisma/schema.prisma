@@ -43,6 +43,7 @@ model User {
   trades                TradeLog[]
   badges                UserBadge[]
   dailyQuests           DailyQuestState[]
+  xpLedgerEntries       XpLedgerEntry[]
   sessions              Session[]
 
   // Phase 3 Paper Trading Relations
@@ -148,16 +149,35 @@ model UserBadge {
 }
 
 model DailyQuestState {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   dateKey   String
   questId   String
-  progress  Int      @default(0)
-  completed Boolean  @default(false)
+  progress  Int       @default(0)
+  target    Int       @default(1)
+  completed Boolean   @default(false)
+  claimed   Boolean   @default(false)
+  claimedAt DateTime?
+  xpAwarded Int       @default(0)
 
   @@unique([userId, dateKey, questId])
   @@map("daily_quest_states")
+}
+
+model XpLedgerEntry {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount       Int
+  balanceAfter Int
+  source       String   // QUEST | STREAK | QUIZ | TRADING_CHALLENGE
+  referenceId  String?  // e.g. questId, dateKey, moduleId
+  description  String
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@map("xp_ledger_entries")
 }
 
 // ========================================================

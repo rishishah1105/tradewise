@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../prisma.js';
 import { extractSessionToken } from '../middleware/authMiddleware.js';
 import { authService } from '../services/authService.js';
+import { rewardService } from '../services/rewardService.js';
 
 const XP_PER_LEVEL = 300;
 const calculateLevel = (xp: number) => Math.floor(Math.max(0, xp) / XP_PER_LEVEL) + 1;
@@ -143,52 +144,8 @@ export const claimDailyStreak = async (req: Request, res: Response) => {
     }
 
     const { todayKey } = req.body;
-    if (!todayKey) {
-      res.status(400).json({ success: false, message: 'Missing todayKey' });
-      return;
-    }
-
-    const user = await prisma.user.findUnique({ where: { id: targetId } });
-    if (!user) {
-      res.status(404).json({ success: false, message: 'User not found' });
-      return;
-    }
-
-    // Idempotency: Prevent duplicate claim for the same date
-    if (user.lastCheckInDate === todayKey) {
-      res.json({
-        success: true,
-        alreadyClaimed: true,
-        message: 'Streak already claimed for today',
-        data: user,
-      });
-      return;
-    }
-
-    const newXP = (user.xp || 0) + 50;
-    const newStreak = (user.streak || 0) + 1;
-    const newLevel = calculateLevel(newXP);
-
-    const [updated] = await prisma.$transaction([
-      prisma.user.update({
-        where: { id: targetId },
-        data: {
-          xp: newXP,
-          level: newLevel,
-          streak: newStreak,
-          lastCheckInDate: todayKey,
-        },
-      }),
-      prisma.activityLog.upsert({
-        where: {
-          userId_dateKey: { userId: targetId, dateKey: todayKey },
-        },
-        update: { count: { increment: 1 } },
-        create: { userId: targetId, dateKey: todayKey, count: 1 },
-      }),
-    ]);
-
-    res.json({ success: true, data: updated });
+    const result = await rewardService.claimDailyStreak(targetId, todayKey);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Database error' });
   }
@@ -217,6 +174,7 @@ export const resetAllProgress = async (req: Request, res: Response) => {
       prisma.tradeLog.deleteMany({ where: { userId: user.id } }),
       prisma.userBadge.deleteMany({ where: { userId: user.id } }),
       prisma.dailyQuestState.deleteMany({ where: { userId: user.id } }),
+      prisma.xpLedgerEntry.deleteMany({ where: { userId: user.id } }),
       prisma.learningChallengeProgress.deleteMany({ where: { userId: user.id } }),
       prisma.user.update({
         where: { id: user.id },

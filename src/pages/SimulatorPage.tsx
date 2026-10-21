@@ -89,6 +89,7 @@ export const SimulatorPage: React.FC = () => {
     formatMoney,
     addMockStock,
     addToast,
+    refreshDailyQuests,
   } = useApp();
 
   // Selection & Chart State
@@ -381,19 +382,36 @@ export const SimulatorPage: React.FC = () => {
           res.message || `Placed ${orderSide} for ${quantity} ${selectedSymbol}`,
           'trade'
         );
-        await fetchBackendPortfolio();
+        await Promise.all([fetchBackendPortfolio(), refreshDailyQuests()]);
       } else {
-        // Fallback to local context execution if backend is offline
-        localPlaceOrder(
+        // Fallback to local context execution if backend order failed or returned offline
+        const localResult = localPlaceOrder(
           selectedSymbol,
           orderSide,
           orderType,
           quantity,
           orderType === 'LIMIT' ? Number(limitPriceInput) : undefined
         );
+        if (localResult && localResult.success) {
+          await api.recordQuestAction(orderType === 'LIMIT' ? 'LIMIT_ORDER' : 'TRADE', 1);
+          await refreshDailyQuests();
+        } else if (res && !res.success && res.message) {
+          addToast('Order Rejected', res.message, 'info');
+        }
       }
     } catch (err) {
       console.warn('Order submission error:', err);
+      const localResult = localPlaceOrder(
+        selectedSymbol,
+        orderSide,
+        orderType,
+        quantity,
+        orderType === 'LIMIT' ? Number(limitPriceInput) : undefined
+      );
+      if (localResult && localResult.success) {
+        await api.recordQuestAction(orderType === 'LIMIT' ? 'LIMIT_ORDER' : 'TRADE', 1);
+        await refreshDailyQuests();
+      }
     } finally {
       setIsSubmittingOrder(false);
     }

@@ -109,7 +109,7 @@ export const LeetCodeDailyProgressCalendar: React.FC<LeetCodeDailyProgressCalend
     }, 0);
   }, [calendarDays]);
 
-  const isTodayActive = (user.activityLog || {})[todayKey] > 0;
+  const isTodayClaimed = Boolean(user.lastCheckInDate && user.lastCheckInDate === todayKey);
 
   return (
     <div
@@ -236,7 +236,7 @@ export const LeetCodeDailyProgressCalendar: React.FC<LeetCodeDailyProgressCalend
         </div>
         <div className="flex items-center gap-2">
           <span className="text-amber-400 font-bold">🔥 {user.streak}d streak</span>
-          {onClaimStreak && !isTodayActive && (
+          {onClaimStreak && !isTodayClaimed && (
             <button
               type="button"
               onClick={(e) => {
@@ -247,6 +247,11 @@ export const LeetCodeDailyProgressCalendar: React.FC<LeetCodeDailyProgressCalend
             >
               Claim
             </button>
+          )}
+          {isTodayClaimed && (
+            <span className="text-emerald-400 font-bold text-[10px] flex items-center gap-1">
+              <Check className="w-3 h-3" /> Claimed
+            </span>
           )}
         </div>
       </div>
